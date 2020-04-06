@@ -124,7 +124,7 @@ class Rhd2000EvalBoard:
         nDevices = self.intan.GetDeviceCount()
         print("Found {} Opal Kelly Devices".format(nDevices))
         for i in range(nDevices):
-            productName = self.intan.GetDeviceListModel()[i]
+            productName = self.intan.GetDeviceListModel(i)
             print("Device #{} : Opal Kelly {} with Serial No. {}".format(i, productName, self.intan.GetDeviceListSerial()[i]))
             if productName == ok.OK_PRODUCT_XEM6010LX45:
                 serialNumber = self.intan.GetDeviceListSerial(i)

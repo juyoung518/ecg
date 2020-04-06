@@ -8,12 +8,12 @@ evalboard = rhd2kbd.Rhd2000EvalBoard()
 
 evalboard.open()
 
-evalboard.uploadFpgaBitfile()
+#evalboard.uploadFpgaBitfile()
 
-evalboard.initialize()
+#evalboard.initialize()
 
-evalboard.setDataSource(0, rhd2kbd.PortA1)
+#evalboard.setDataSource(0, rhd2kbd.PortA1)
 
-evalboard.setSampleRate(rhd2kbd.SampleRate20000Hz)
+#evalboard.setSampleRate(rhd2kbd.SampleRate20000Hz)
 
-evalboard.setCableLengthFeet(rhd2kbd.PortA, 3.0)
+#evalboard.setCableLengthFeet(rhd2kbd.PortA, 3.0)

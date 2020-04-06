@@ -4,7 +4,7 @@
 import Queue
 import ok
 from sys import exit
-from math import floor
+from math import floor, exp
 
 # Variable Definitions
 global USB_BUFFER_SIZE
@@ -111,7 +111,7 @@ class Rhd2000EvalBoard:
         self.dataStreamEnabled = [0] * MAX_NUM_DATA_STREAMS
         for i in range(MAX_NUM_DATA_STREAMS):
             self.dataStreamEnabled[i] = 0
-
+        self.usbBuffer = [None]*USB_BUFFER_SIZE
         self.cableDelay = [-1]*4
     def open(self):
         print("---- Intan Technologies ---- Rhythm RHD2000 Controller v1.0 ----")
@@ -125,7 +125,7 @@ class Rhd2000EvalBoard:
         print("Found {} Opal Kelly Devices".format(nDevices))
         for i in range(nDevices):
             productName = self.intan.GetDeviceListModel(i)
-            print("Device #{} : Opal Kelly {} with Serial No. {}".format(i, productName, self.intan.GetDeviceListSerial(i)))
+            print("Device #{} : Opal Kelly {} with Serial No. {}".format(i, self.opalKellyModelName(productName), self.intan.GetDeviceListSerial(i)))
             if productName == ok.OK_PRODUCT_XEM6010LX45:
                 serialNumber = self.intan.GetDeviceListSerial(i)
         print("Attempting to Connect to Device {}".format(serialNumber))
@@ -401,7 +401,8 @@ class Rhd2000EvalBoard:
             delay = 1
         self.setCableDelay(port, delay)
     def getSampleRate(self):
-        print("No need to be implemented")
+        print("No need to be used : use definitions at the top instead.")
+        return self.sampleRate
     def setCableDelay(self, port, delay):
         if delay < 0 or delay > 15:
             raise Exception("Warning in Rhd2000EvalBoard::setCableDelay: delay out of range: {}".format(delay))
@@ -546,4 +547,40 @@ class Rhd2000EvalBoard:
             self.intan.ActivateTriggerIn(TrigInExtDigOut, i)
         else:
             raise Exception("Error in Rhd2000EvalBoard::setExternalDigOutChannel: port out of range.")
+    # ------- Continuing on macbook
+    def enableDacHighpassFilter(self, enable):
+        self.intan.SetWireInValue(WireInMultiUse, 1 if enable is True else 0)
+        self.intan.UpdateWireIns()
+        self.intan.ActivateTriggerIn(TrigInDacHpf, 0)
+    def setDacHighpassFilter(self, cutoff):
+        pi = 3.1415926535897
+        b = 1.0 - exp(-2.0 * pi * cutoff / self.sampleRate)
+        filterCoefficient = floor(65536.0 * b + 0.5)
+        if filterCoefficient > 1:
+            filterCoefficient = 1
+        elif filterCoefficient > 65535:
+            filterCoefficient = 65535
+        self.intan.SetWireInValue(WireInMultiUse, filterCoefficient)
+        self.intan.UpdateWireIns()
+        self.intan.ActivateTriggerIn(TrigInDacHpf, 1)
+    def numWordsInFifo(self):
+        self.intan.UpdateWireOuts()
+        value = (self.intan.GetWireOutValue(WireOutNumWordsMsb) << 16) + self.intan.GetWireOutValue(WireOutNumWordsLsb)
+        return value
+    def fifoCapacityInWords(self):
+        return FIFO_CAPACITY_WORDS
+    def flush(self):
+        while self.numWordsInFifo() >= USB_BUFFER_SIZE / 2:
+            self.intan.ReadFromPipeOut(PipeOutData, USB_BUFFER_SIZE, self.usbBuffer)
+            # ReadFromPipeOut overwrites usbBuffer with PipeOutData(new incoming data)
+        while self.numWordsInFifo() > 0:
+            self.intan.ReadFromPipeOut(PipeOutData, 2*self.numWordsInFifo(), self.usbBuffer)
+    def opalKellyModelName(self, model):
+        if model == ok.OK_PRODUCT_XEM6010LX45:
+            return 'XEM6010LX45'
+        else:
+            return 'Unknown'
+        # We only use XEM6010lx45
+
+
 

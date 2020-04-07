@@ -547,7 +547,6 @@ class Rhd2000EvalBoard:
             self.intan.ActivateTriggerIn(TrigInExtDigOut, i)
         else:
             raise Exception("Error in Rhd2000EvalBoard::setExternalDigOutChannel: port out of range.")
-    # ------- Continuing on macbook
     def enableDacHighpassFilter(self, enable):
         self.intan.SetWireInValue(WireInMultiUse, 1 if enable is True else 0)
         self.intan.UpdateWireIns()
@@ -581,6 +580,78 @@ class Rhd2000EvalBoard:
         else:
             return 'Unknown'
         # We only use XEM6010lx45
+    def run(self):
+        self.intan.ActivateTriggerIn(TrigInSpiStart, 0)
+    def isRunning(self):
+        self.intan.UpdateWireOuts()
+        value = self.intan.GetWireOutValue(WireOutSpiRunning)
+        if (value & 0x01) == 0:
+            return False
+        else:
+            return True
+    def setTtlOut(self, ttlOutArray):
+        ttlOut = 0
+        for i in range(16):
+            if ttlOutArray[i] > 0:
+                ttlOut += 1 << i
+        self.intan.SetWireInValue(WireInTtlOut, ttlOut)
+        self.intan.UpdateWireIns()
+    def getTtlIn(self, ttlInArray):
+        self.intan.UpdateWireOuts()
+        ttlIn = self.intan.GetWireOutValue(WireOutTtlIn)
+        for i in range(16):
+            ttlInArray[i] = 0
+            if (ttlIn & (1 << i)) > 0:
+                ttlInArray[i] = 1
+    def setLedDisplay(self, ledArray):
+        ledOut = 0
+        for i in range(8):
+            if ledArray[i] > 0:
+                ledOut += 1 << i
+        self.intan.SetWireInValue(WireInLedDisplay, ledOut)
+        self.intan.UpdateWireIns()
+    def estimateCableLengthMeters(self, delay):
+        speedOfLight = 299792458.0
+        xilinxLvdsOutputDelay = 1.9e-9
+        xilinxLvdsInputDelay = 1.4e-9
+        rhd2000Delay = 9.0e-9
+        misoSettleTime = 6.7e-9
+        tStep = 1.0 / (2800.0 * self.getSampleRate())
+        cableVelocity = 0.555 * speedOfLight
+        distance = cableVelocity * (((delay) - 1.0) * tStep - (xilinxLvdsOutputDelay + rhd2000Delay + xilinxLvdsInputDelay + misoSettleTime))
+        if distance < 0.0:
+            distance = 0.0
+        return distance/2.0
+    def estimateCableLengthFeet(self, delay):
+        return 3.2808 * self.estimateCableLengthMeters(delay)
+    def getSampleRateEnum(self):
+        return self.sampleRate
+    def printCommandList(self, commandList, auxCommandSlot, bank):
+        print("")
+        for i in range(len(commandList)):
+            cmd = commandList[i]
+            if cmd < 0 or cmd > 0xffff:
+                print("Command[{}] = INVALID COMMAND".format(i))
+            elif (cmd & 0xc000) == 0x0000:
+                channel = (cmd & 0x3f00) >> 8
+                print("Command[{}] = CONVERT({})".format(i, channel))
+            elif (cmd & 0xc000) == 0xc000:
+                reg = (cmd & 0x3f00) >> 8
+                print("Command[{}] = READ({})".format(i, reg))
+            elif (cmd & 0xc000) == 0x8000:
+                reg = (cmd & 0x3f00) >> 8
+                data = (cmd & 0x00ff)
+                print("Command[{}] = WRITE({}, NOT IMPLEMENTED YET)".format(i, reg))
+            elif cmd == 0x5500:
+                print("Command[{}] = CALIBRATE".format(i))
+            elif cmd == 0x6a00:
+                print("command[{}] = CLEAR".format(i))
+            else:
+                print("command[{}] = INVALID COMMAND".format(i))
+        print("")
+
+
+
 
 
 

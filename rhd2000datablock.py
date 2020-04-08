@@ -99,8 +99,6 @@ class Rhd2000DataBlock:
             index += 2
             self.ttlOut[t] = self.convertUsbWord(usbBuffer, index)
             index += 2
-    # def print(self, stream)
-    # This part is skipped.
     # THIS PART WAS MODIFIED TO RETURN A VALUE : INCOMPATIBILITY WITH POINTERS
     def writeWordLittleEndian(self, outputStream, dataWord):
         lsb = dataWord & 0x00ff
@@ -122,3 +120,22 @@ class Rhd2000DataBlock:
                 saveOut = self.writeWordLittleEndian(saveOut, self.boardAdcData[i][t])
             saveOut = self.writeWordLittleEndian(saveOut, self.ttlIn[t])
             saveOut = self.writeWordLittleEndian(saveOut, self.ttlOut[t])
+    # print Replaced by rhdPrint
+    def rhdPrint(self, stream):
+        RamOffset = 37
+        print("")
+        print("RHD 2000 Data Block contents:\n  ROM contents:\n    Chip Name: ")
+        print(self.auxiliaryData[stream][2][24] + self.auxiliaryData[stream][2][25] + self.auxiliaryData[stream][2][26]\
+              + self.auxiliaryData[stream][2][27] + self.auxiliaryData[stream][2][28] + self.auxiliaryData[stream][2][29]\
+              + self.auxiliaryData[stream][2][30] + self.auxiliaryData[stream][2][31])
+        print("    Company Name:")
+        print(self.auxiliaryData[stream][2][32] + self.auxiliaryData[stream][2][33] + self.auxiliaryData[stream][2][34]\
+              + self.auxiliaryData[stream][2][35] + self.auxiliaryData[stream][2][36])
+        print("    Intan Chip ID: {}".format(self.auxiliaryData[stream][2][19]))
+        print("    Number of Amps: {}".format(self.auxiliaryData[stream][2][20]))
+        if self.auxiliaryData[stream][2][21] == 0:
+            print("bipolar")
+        elif self.auxiliaryData[stream][2][21] == 1:
+            print("unipolar")
+        else:
+            print("UNKNOWN")

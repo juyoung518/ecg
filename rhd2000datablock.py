@@ -139,3 +139,57 @@ class Rhd2000DataBlock:
             print("unipolar")
         else:
             print("UNKNOWN")
+        print("    Die Revision: {}".format(self.auxiliaryData[stream[2][22]]))
+        print("    Future Expansion Register: {}".format(self.auxiliaryData[stream][2][23]))
+        print("  RAM contents:")
+        print("    ADC reference BW:      {}".format((self.auxiliaryData[stream][2][RamOffset + 0] & 0xc0) >> 6))
+        print("    amp fast settle:       {}".format((self.auxiliaryData[stream][2][RamOffset + 0] & 0x20) >> 5))
+        print("    amp Vref enable:       {}".format((self.auxiliaryData[stream][2][RamOffset + 0] & 0x10) >> 4))
+        print("    ADC comparator bias:   {}".format((self.auxiliaryData[stream][2][RamOffset + 0] & 0x0c) >> 2))
+        print("    ADC comparator select: {}".format((self.auxiliaryData[stream][2][RamOffset + 0] & 0x03) >> 0))
+        print("    VDD sense enable:      {}".format((self.auxiliaryData[stream][2][RamOffset + 1] & 0x40) >> 6))
+        print("    ADC buffer bias:       {}".format((self.auxiliaryData[stream][2][RamOffset + 1] & 0x3f) >> 0))
+        print("    MUX bias:              {}".format((self.auxiliaryData[stream][2][RamOffset + 2] & 0x3f) >> 0))
+        print("    MUX load:              {}".format((self.auxiliaryData[stream][2][RamOffset + 3] & 0xe0) >> 5))
+        print("    tempS2, tempS1:        {}, {}".format(((self.auxiliaryData[stream][2][RamOffset + 3] & 0x10) >> 4), ((self.auxiliaryData[stream][2][RamOffset + 3] & 0x08) >> 3)))
+        print("    tempen:                {}".format((self.auxiliaryData[stream][2][RamOffset + 3] & 0x04) >> 2))
+        print("    digout HiZ:            {}".format((self.auxiliaryData[stream][2][RamOffset + 3] & 0x02) >> 1))
+        print("    digout:                {}".format((self.auxiliaryData[stream][2][RamOffset + 3] & 0x01) >> 0))
+        print("    weak MISO:             {}".format((self.auxiliaryData[stream][2][RamOffset + 4] & 0x80) >> 7))
+        print("    twoscomp:              {}".format((self.auxiliaryData[stream][2][RamOffset + 4] & 0x40) >> 6))
+        print("    absmode:               {}".format((self.auxiliaryData[stream][2][RamOffset + 4] & 0x20) >> 5))
+        print("    DSPen:                 {}".format((self.auxiliaryData[stream][2][RamOffset + 4] & 0x10) >> 4))
+        print("    DSP cutoff freq:       {}".format((self.auxiliaryData[stream][2][RamOffset + 4] & 0x0f) >> 0))
+        print("    Zcheck DAC power:      {}".format((self.auxiliaryData[stream][2][RamOffset + 5] & 0x40) >> 6))
+        print("    Zcheck load:           {}".format((self.auxiliaryData[stream][2][RamOffset + 5] & 0x20) >> 5))
+        print("    Zcheck scale:          {}".format((self.auxiliaryData[stream][2][RamOffset + 5] & 0x18) >> 3))
+        print("    Zcheck conn all:       {}".format((self.auxiliaryData[stream][2][RamOffset + 5] & 0x04) >> 2))
+        print("    Zcheck sel pol:        {}".format((self.auxiliaryData[stream][2][RamOffset + 5] & 0x02) >> 1))
+        print("    Zcheck en:             {}".format((self.auxiliaryData[stream][2][RamOffset + 5] & 0x01) >> 0))
+        print("    Zcheck DAC:            {}".format((self.auxiliaryData[stream][2][RamOffset + 6] & 0xff) >> 0))
+        print("    Zcheck select:         {}".format((self.auxiliaryData[stream][2][RamOffset + 7] & 0x3f) >> 0))
+        print("    ADC aux1 en:           {}".format((self.auxiliaryData[stream][2][RamOffset + 9] & 0x80) >> 7))
+        print("    ADC aux2 en:           {}".format((self.auxiliaryData[stream][2][RamOffset + 11] & 0x80) >> 7))
+        print("    ADC aux3 en:           {}".format((self.auxiliaryData[stream][2][RamOffset + 13] & 0x80) >> 7))
+        print("    offchip RH1:           {}".format((self.auxiliaryData[stream][2][RamOffset + 8] & 0x80) >> 7))
+        print("    offchip RH2:           {}".format((self.auxiliaryData[stream][2][RamOffset + 10] & 0x80) >> 7))
+        print("    offchip RL:            {}".format((self.auxiliaryData[stream][2][RamOffset + 12] & 0x80) >> 7))
+        rH1Dac1 = self.auxiliaryData[stream][2][RamOffset + 8] & 0x3f
+        rH1Dac2 = self.auxiliaryData[stream][2][RamOffset + 9] & 0x1f
+        rH2Dac1 = self.auxiliaryData[stream][2][RamOffset + 10] & 0x3f
+        rH2Dac2 = self.auxiliaryData[stream][2][RamOffset + 11] & 0x1f
+        rLDac1 = self.auxiliaryData[stream][2][RamOffset + 12] & 0x7f
+        rLDac2 = self.auxiliaryData[stream][2][RamOffset + 13] & 0x3f
+        rLDac3 = self.auxiliaryData[stream][2][RamOffset + 13] & 0x40 >> 6
+        rH1 = 2630.0 + rH1Dac2 * 30800.0 + rH1Dac1 * 590.0
+        rH2 = 8200.0 + rH2Dac2 * 38400.0 + rH2Dac1 * 730.0
+        rL = 3300.0 + rLDac3 * 3000000.0 + rLDac2 * 15400.0 + rLDac1 * 190.0
+        # 275 ~ 318 skip
+        tempA = self.auxiliaryData[stream][1][12]
+        tempB = self.auxiliaryData[stream][1][20]
+        vddSample = self.auxiliaryData[stream][1][28]
+        tempUnitsC = ((tempB - tempA)) / 98.9 - 273.15
+        tempUnitsF = (9.0 / 5.0) * tempUnitsC + 32.0
+        vddSense = 0.0000748 * (vddSample)
+        print("  Temperature sensor (only one reading): {}".format(round(tempUnitsC, 2)))
+        

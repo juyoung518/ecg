@@ -642,3 +642,4 @@ class Rhd2000Registers:
                     commandList.append(self.createRhd2000Command(Rhd2000CommandRegWrite, 6, value))
                     t += 1.0/self.sampleRate
         return int(len(commandList))
+

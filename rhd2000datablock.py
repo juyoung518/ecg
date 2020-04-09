@@ -120,6 +120,7 @@ class Rhd2000DataBlock:
                 saveOut = self.writeWordLittleEndian(saveOut, self.boardAdcData[i][t])
             saveOut = self.writeWordLittleEndian(saveOut, self.ttlIn[t])
             saveOut = self.writeWordLittleEndian(saveOut, self.ttlOut[t])
+        return saveOut
     # print Replaced by rhdPrint
     def rhdPrint(self, stream):
         RamOffset = 37

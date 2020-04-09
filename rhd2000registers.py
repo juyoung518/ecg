@@ -1,3 +1,4 @@
+# RHD2000REGISTERS
 import math
 
 # ------------- RHD2000REGISTERS.H
@@ -7,12 +8,6 @@ ZcheckCs10pF = 'ZcheckCs10pF'
 
 ZcheckPositiveInput = 'ZcheckPositiveInput'
 ZcheckNegativeInput = 'ZcheckNegativeInput'
-
-Rhd2000CommandConvert = 'Rhd2000CommandConvert'
-Rhd2000CommandCalibrate = 'Rhd2000CommandCalibrate'
-Rhd2000CommandCalClear = 'Rhd2000CommandCalClear'
-Rhd2000CommandRegWrite = 'Rhd2000CommandRegWrite'
-Rhd2000CommandRegRead = 'Rhd2000CommandRegRead'
 
 Rhd2000CommandConvert = 'Rhd2000CommandConvert'
 Rhd2000CommandCalibrate = 'Rhd2000CommandCalibrate'
@@ -128,7 +123,7 @@ class Rhd2000Registers:
             logNewDspCutoffFreq = math.log10(newDspCutoffFreq)
             for n in range(16):
                 x = math.pow(2.0, float(n))
-                fCutoff[n] = self.sampleRate * math.log(x / (x - 1.0)) / (2*Pi)
+                fCutoff[n] = self.sampleRate * math.log(x / (x - 1.0)) / (2 * Pi)
                 logFCutoff[n] = math.log10(fCutoff[n])
             if newDspCutoffFreq > fCutoff[1]:
                 self.dspCutoffFreq = 1
@@ -144,7 +139,7 @@ class Rhd2000Registers:
         elif len(args) == 0:
             Pi = 2 * math.acos(0.0)
             x = math.pow(2.0, self.dspCutoffFreq)
-            return self.sampleRate * math.log(x / (x - 1.0)) / (2*Pi)
+            return self.sampleRate * math.log(x / (x - 1.0)) / (2 * Pi)
         else:
             raise Exception("Error in function SetDspCutoffFreq()")
 
@@ -158,7 +153,7 @@ class Rhd2000Registers:
             self.zcheckScale = 0x03
 
     def setZcheckPolarity(self, polarity):
-        #polarity is enum(zcheckpolarity)
+        # polarity is enum(zcheckpolarity)
         if polarity == ZcheckPositiveInput:
             self.zcheckSelPol = 0
         elif polarity == ZcheckNegativeInput:
@@ -187,7 +182,7 @@ class Rhd2000Registers:
         RH2Dac1Steps = 63
         RH2Dac2Steps = 31
 
-        if upperBandwidth > 30000.0 :
+        if upperBandwidth > 30000.0:
             upperBandwidth = 30000.0
 
         rH1Target = self.rH1FromUpperBandwidth(upperBandwidth)
@@ -195,11 +190,11 @@ class Rhd2000Registers:
         self.rH1Dac2 = 0
         rH1Actual = RH1Base
 
-        for i in range(RH1Dac2Steps) :
+        for i in range(RH1Dac2Steps):
             if rH1Actual < rH1Target - (RH1Dac2Unit - RH1Dac2Unit / 2):
                 rH1Actual += RH1Dac2Unit
                 self.rH1Dac2 += 1
-        for i in range(RH1Dac1Steps) :
+        for i in range(RH1Dac1Steps):
             if rH1Actual < rH1Target - (RH1Dac1Unit / 2):
                 rH1Actual += RH1Dac1Unit
                 self.rH1Dac1 += 1
@@ -254,11 +249,35 @@ class Rhd2000Registers:
 
         if lowerBandwidth > 1500.0:
             lowerBandwidth = 1500.0
+        rLTarget = self.rLFromLowerBandwidth(lowerBandwidth)
+        self.rLDac1 = 0
+        self.rLDac2 = 0
+        self.rLDac3 = 0
+        rLActual = RLBase
+
+        if lowerBandwidth < 0.15:
+            rLActual += RLDac3Unit
+            self.rLDac3 += 1
+
+        for i in range(RLDac2Steps):
+            if rLActual < rLTarget - (RLDac2Unit - RLDac1Unit / 2) :
+                rLActual += RLDac2Unit
+                self.rLDac2 += 1
+
+        for i in range(RLDac1Steps):
+            if rLActual < rLTarget - (RLDac1Unit / 2):
+                rLActual += RLDac1Unit
+                self.rLDac1 += 1
+
+        actualLowerBandwidth = self.lowerBandwidthFromRL(rLActual)
+
+        return actualLowerBandwidth
 
     def rLFromLowerBandwidth(self, lowerBandwidth):
         log10f = math.log10(lowerBandwidth)
         if lowerBandwidth < 4.0:
-            return 1.0061 * math.pow(10.0, (4.9391 - 1.2088 * log10f + 0.5698 * log10f * log10f + 0.1442 * log10f * log10f * log10f))
+            return 1.0061 * math.pow(10.0, (
+                    4.9391 - 1.2088 * log10f + 0.5698 * log10f * log10f + 0.1442 * log10f * log10f * log10f))
         else:
             return 1.0061 * math.pow(10.0, (4.7351 - 0.5916 * log10f + 0.08482 * log10f * log10f))
 
@@ -294,7 +313,7 @@ class Rhd2000Registers:
         self.rLDac3 = 0
         rLActual = RLBase
 
-        if lowerBandwidth < 0.15 :
+        if lowerBandwidth < 0.15:
             rLActual += RLDac3Unit
             self.rLDac3 += 1
         for i in range(RLDac2Steps):
@@ -339,17 +358,21 @@ class Rhd2000Registers:
     def getRegisterValue(self, reg):
         zcheckDac = 128
         if reg == 0:
-            regout = (self.adcReferenceBw << 6) + (self.ampFastSettle << 5) + (self.ampVrefEnable << 4) + (self.adcComparatorBias << 2) + self.adcComparatorSelect
+            regout = (self.adcReferenceBw << 6) + (self.ampFastSettle << 5) + (self.ampVrefEnable << 4) + (
+                    self.adcComparatorBias << 2) + self.adcComparatorSelect
         elif reg == 1:
             regout = (self.vddSenseEnable << 6) + self.adcBufferBias
         elif reg == 2:
             regout = self.muxBias
         elif reg == 3:
-            regout = (self.muxLoad << 5) + (self.tempS2 << 4) + (self.tempS1 << 3) + (self.tempEn << 2) + (self.digOutHiZ << 1) + self.digOut
+            regout = (self.muxLoad << 5) + (self.tempS2 << 4) + (self.tempS1 << 3) + (self.tempEn << 2) + (
+                    self.digOutHiZ << 1) + self.digOut
         elif reg == 4:
-            regout = (self.weakMiso << 7) + (self.twosComp << 6) + (self.absMode << 5) + (self.dspEn << 4) + self.dspCutoffFreq
+            regout = (self.weakMiso << 7) + (self.twosComp << 6) + (self.absMode << 5) + (
+                    self.dspEn << 4) + self.dspCutoffFreq
         elif reg == 5:
-            regout = (self.zcheckDacPower << 6) + (self.zcheckLoad << 5) + (self.zcheckScale << 3) + (self.zcheckConnAll << 2) + (self.zcheckSelPol << 1) + self.zcheckEn
+            regout = (self.zcheckDacPower << 6) + (self.zcheckLoad << 5) + (self.zcheckScale << 3) + (
+                    self.zcheckConnAll << 2) + (self.zcheckSelPol << 1) + self.zcheckEn
         elif reg == 6:
             regout = zcheckDac
         elif reg == 7:
@@ -367,21 +390,29 @@ class Rhd2000Registers:
         elif reg == 13:
             regout = (self.adcAux3En << 7) + (self.rLDac3 << 6) + self.rLDac2
         elif reg == 14:
-            regout = (self.aPwr[7] << 7) + (self.aPwr[6] << 6) + (self.aPwr[5] << 5) + (self.aPwr[4] << 4) + (self.aPwr[3] << 3) + (self.aPwr[2] << 2) + (self.aPwr[1] << 1) + self.aPwr[0]
+            regout = (self.aPwr[7] << 7) + (self.aPwr[6] << 6) + (self.aPwr[5] << 5) + (self.aPwr[4] << 4) + (
+                    self.aPwr[3] << 3) + (self.aPwr[2] << 2) + (self.aPwr[1] << 1) + self.aPwr[0]
         elif reg == 15:
-            regout = (self.aPwr[15] << 7) + (self.aPwr[14] << 6) + (self.aPwr[13] << 5) + (self.aPwr[12] << 4) + (self.aPwr[11] << 3) + (self.aPwr[10] << 2) + (self.aPwr[9] << 1) + self.aPwr[0]
+            regout = (self.aPwr[15] << 7) + (self.aPwr[14] << 6) + (self.aPwr[13] << 5) + (self.aPwr[12] << 4) + (
+                    self.aPwr[11] << 3) + (self.aPwr[10] << 2) + (self.aPwr[9] << 1) + self.aPwr[0]
         elif reg == 16:
-            regout = (self.aPwr[23] << 7) + (self.aPwr[22] << 6) + (self.aPwr[21] << 5) + (self.aPwr[20] << 4) + (self.aPwr[19] << 3) + (self.aPwr[18] << 2) + (self.aPwr[17] << 1) + self.aPwr[16]
+            regout = (self.aPwr[23] << 7) + (self.aPwr[22] << 6) + (self.aPwr[21] << 5) + (self.aPwr[20] << 4) + (
+                    self.aPwr[19] << 3) + (self.aPwr[18] << 2) + (self.aPwr[17] << 1) + self.aPwr[16]
         elif reg == 17:
-            regout = (self.aPwr[31] << 7) + (self.aPwr[30] << 6) + (self.aPwr[29] << 5) + (self.aPwr[28] << 4) + (self.aPwr[27] << 3) + (self.aPwr[26] << 2) + (self.aPwr[25] << 1) + self.aPwr[24]
+            regout = (self.aPwr[31] << 7) + (self.aPwr[30] << 6) + (self.aPwr[29] << 5) + (self.aPwr[28] << 4) + (
+                    self.aPwr[27] << 3) + (self.aPwr[26] << 2) + (self.aPwr[25] << 1) + self.aPwr[24]
         elif reg == 18:
-            regout = (self.aPwr[39] << 7) + (self.aPwr[38] << 6) + (self.aPwr[37] << 5) + (self.aPwr[36] << 4) + (self.aPwr[35] << 3) + (self.aPwr[34] << 2) + (self.aPwr[33] << 1) + self.aPwr[32]
+            regout = (self.aPwr[39] << 7) + (self.aPwr[38] << 6) + (self.aPwr[37] << 5) + (self.aPwr[36] << 4) + (
+                    self.aPwr[35] << 3) + (self.aPwr[34] << 2) + (self.aPwr[33] << 1) + self.aPwr[32]
         elif reg == 19:
-            regout = (self.aPwr[47] << 7) + (self.aPwr[46] << 6) + (self.aPwr[45] << 5) + (self.aPwr[44] << 4) + (self.aPwr[43] << 3) + (self.aPwr[42] << 2) + (self.aPwr[41] << 1) + self.aPwr[40]
+            regout = (self.aPwr[47] << 7) + (self.aPwr[46] << 6) + (self.aPwr[45] << 5) + (self.aPwr[44] << 4) + (
+                    self.aPwr[43] << 3) + (self.aPwr[42] << 2) + (self.aPwr[41] << 1) + self.aPwr[40]
         elif reg == 20:
-            regout = (self.aPwr[55] << 7) + (self.aPwr[54] << 6) + (self.aPwr[53] << 5) + (self.aPwr[52] << 4) + (self.aPwr[51] << 3) + (self.aPwr[50] << 2) + (self.aPwr[49] << 1) + self.aPwr[48]
+            regout = (self.aPwr[55] << 7) + (self.aPwr[54] << 6) + (self.aPwr[53] << 5) + (self.aPwr[52] << 4) + (
+                    self.aPwr[51] << 3) + (self.aPwr[50] << 2) + (self.aPwr[49] << 1) + self.aPwr[48]
         elif reg == 21:
-            regout = (self.aPwr[63] << 7) + (self.aPwr[62] << 6) + (self.aPwr[61] << 5) + (self.aPwr[60] << 4) + (self.aPwr[59] << 3) + (self.aPwr[58] << 2) + (self.aPwr[57] << 1) + self.aPwr[56]
+            regout = (self.aPwr[63] << 7) + (self.aPwr[62] << 6) + (self.aPwr[61] << 5) + (self.aPwr[60] << 4) + (
+                    self.aPwr[59] << 3) + (self.aPwr[58] << 2) + (self.aPwr[57] << 1) + self.aPwr[56]
         else:
             regout = -1
 
@@ -396,7 +427,8 @@ class Rhd2000Registers:
             elif commandType == Rhd2000CommandCalClear:
                 return 0x6a00
             else:
-                raise Exception("Error in Rhd2000Registers::createRhd2000Command: \nOnly 'Calibrate' or 'Clear Calibration' commands take zero arguments.")
+                raise Exception(
+                    "Error in Rhd2000Registers::createRhd2000Command: \nOnly 'Calibrate' or 'Clear Calibration' commands take zero arguments.")
                 return -1
         elif len(args) == 2:
             arg1 = args[1]
@@ -412,7 +444,8 @@ class Rhd2000Registers:
                     return -1
                 return 0xc000 + (arg1 << 8)
             else:
-                raise Exception("Error in Rhd2000Registers::createRhd2000Command: \nOnly 'Convert' and 'Register Read' commands take one argument.")
+                raise Exception(
+                    "Error in Rhd2000Registers::createRhd2000Command: \nOnly 'Convert' and 'Register Read' commands take one argument.")
                 return -1
         elif len(args) == 3:
             arg2 = args[2]
@@ -428,7 +461,8 @@ class Rhd2000Registers:
 
                 return 0x8000 + (arg1 << 8) + arg2
             else:
-                raise Exception("Error in Rhd2000Registers::createRhd2000Command: \nOnly 'Register Write' commands take two arguments.")
+                raise Exception(
+                    "Error in Rhd2000Registers::createRhd2000Command: \nOnly 'Register Write' commands take two arguments.")
                 return -1
 
     def createCommandListRegisterConfig(self, commandList, calibrate):
@@ -621,7 +655,8 @@ class Rhd2000Registers:
             raise Exception("Error in Rhd2000Registers::createCommandListZcheckDac: Negative frequency not allowed.")
             return -1
         elif frequency > self.sampleRate / 4.0:
-            raise Exception("Error in Rhd2000Registers::createCommandListZcheckDac: \nFrequency too high relative to sampling rate.")
+            raise Exception(
+                "Error in Rhd2000Registers::createCommandListZcheckDac: \nFrequency too high relative to sampling rate.")
             return -1
         if frequency == 0.0:
             for i in range(MaxCommandLength):
@@ -640,6 +675,5 @@ class Rhd2000Registers:
                     elif value > 255:
                         value = 255
                     commandList.append(self.createRhd2000Command(Rhd2000CommandRegWrite, 6, value))
-                    t += 1.0/self.sampleRate
+                    t += 1.0 / self.sampleRate
         return int(len(commandList))
-

@@ -26,7 +26,7 @@ SampleRate1500Hz = 1500.0
 SampleRate2000Hz = 2000.0
 SampleRate2500Hz = 2500.0
 SampleRate3000Hz = 3000.0
-SampleRate3333Hz = 10000.0/3.0
+SampleRate3333Hz = 10000.0 / 3.0
 SampleRate4000Hz = 4000.0
 SampleRate5000Hz = 5000.0
 SampleRate6250Hz = 6250.0
@@ -101,8 +101,8 @@ PortA, PortB, PortC, PortD = ['PortA', 'PortB', 'PortC', 'PortD']
 PortA1, PortB1, PortC1, PortD1 = ['PortA1', 'PortB1', 'PortC1', 'PortD1']
 PortA2, PortB2, PortC2, PortD2 = ['PortA2', 'PortB2', 'PortC2', 'PortD2']
 
-# Global variables
 
+# Global variables
 
 
 # --------- RHDEVALBOARD.CPP
@@ -114,8 +114,9 @@ class Rhd2000EvalBoard:
         self.dataStreamEnabled = [0] * MAX_NUM_DATA_STREAMS
         for i in range(MAX_NUM_DATA_STREAMS):
             self.dataStreamEnabled[i] = 0
-        self.usbBuffer = [None]*USB_BUFFER_SIZE
-        self.cableDelay = [-1]*4
+        self.usbBuffer = [None] * USB_BUFFER_SIZE
+        self.cableDelay = [-1] * 4
+
     def open(self):
         print("---- Intan Technologies ---- Rhythm RHD2000 Controller v1.0 ----")
         try:
@@ -128,7 +129,8 @@ class Rhd2000EvalBoard:
         print("Found {} Opal Kelly Devices".format(nDevices))
         for i in range(nDevices):
             productName = self.intan.GetDeviceListModel(i)
-            print("Device #{} : Opal Kelly {} with Serial No. {}".format(i, self.opalKellyModelName(productName), self.intan.GetDeviceListSerial(i)))
+            print("Device #{} : Opal Kelly {} with Serial No. {}".format(i, self.opalKellyModelName(productName),
+                                                                         self.intan.GetDeviceListSerial(i)))
             if productName == ok.OK_PRODUCT_XEM6010LX45:
                 serialNumber = self.intan.GetDeviceListSerial(i)
         print("Attempting to Connect to Device {}".format(serialNumber))
@@ -150,6 +152,7 @@ class Rhd2000EvalBoard:
         print('Opal Kelly Device Firmware Version : {}'.format(self.deviceInfo.deviceMajorVersion))
         print('Opal Kelly Device Serial No. : {}'.format(self.deviceInfo.serialNumber))
         print('Opal Kelly Device ID : {}'.format(self.deviceInfo.deviceID))
+
     def uploadFpgaBitfile(self):
         err_code = self.intan.ConfigureFPGA('main.bit')
         if err_code == self.intan.NoError:
@@ -183,7 +186,6 @@ class Rhd2000EvalBoard:
         if self.intan.IsFrontPanelEnabled() is False:
             print("Opal Kelly FrontPanel support is not enabled in this FPGA configuration.")
             del self.intan
-            self.resetBuffer()
             return False
 
         self.intan.UpdateWireOuts()
@@ -197,13 +199,16 @@ class Rhd2000EvalBoard:
             print("Rhythm configuration file successfully loaded.  Rhythm version number: {}".format(boardVersion))
 
         return True
+
     def getSystemCLockFreq(self):
         print('Not Implemented Yet')
+
     def resetBoard(self):
         self.intan.SetWireInValue(WireInResetRun, 0x01, 0x01)
         self.intan.UpdateWireIns()
         self.intan.SetWireInValue(WireInResetRun, 0x00, 0x01)
         self.intan.UpdateWireIns()
+
     def setSampleRate(self, newSampleRate):
         sampleSwitch = {
             SampleRate1000Hz: [7, 125],
@@ -238,15 +243,16 @@ class Rhd2000EvalBoard:
             pass
 
         return True
+
     def isDcmProgDone(self):
         self.intan.UpdateWireOuts()
         value = self.intan.GetWireOutValue(WireOutDataClkLocked)
-        return ((value & 0x0002) > 1)
+        return (value & 0x0002) > 1
 
     def isDataClockLocked(self):
         self.intan.UpdateWireOuts()
         value = self.intan.GetWireOutValue(WireOutDataClkLocked)
-        return ((value & 0x0001) > 0)
+        return (value & 0x0001) > 0
 
     def initialize(self):
         self.resetBoard()
@@ -351,7 +357,8 @@ class Rhd2000EvalBoard:
             'AuxCmd3': [WireInAuxCmdBank3, bank << bitShift, 0x000f << bitShift]
         }
         result_switchauxCommandSlot = switchauxCommandSlot.get(auxCommandSlot, 'Error!')
-        self.intan.SetWireInValue(result_switchauxCommandSlot[0], result_switchauxCommandSlot[1], result_switchauxCommandSlot[2])
+        self.intan.SetWireInValue(result_switchauxCommandSlot[0], result_switchauxCommandSlot[1],
+                                  result_switchauxCommandSlot[2])
         self.intan.UpdateWireIns()
 
     def selectAuxCommandLength(self, auxCommandSlot, loopIndex, endIndex):
@@ -374,7 +381,7 @@ class Rhd2000EvalBoard:
         self.intan.UpdateWireIns()
 
     def setContinuousRunMode(self, continuousMode):
-        if continuousMode == True:
+        if continuousMode:
             self.intan.SetWireInValue(WireInResetRun, 0x02, 0x02)
         else:
             self.intan.SetWireInValue(WireInResetRun, 0x00, 0x02)
@@ -383,12 +390,13 @@ class Rhd2000EvalBoard:
     def setMaxTimeStep(self, maxTimeStep):
         maxTimeStepLsb = maxTimeStep & 0x0000ffff
         maxTimeStepMsb = maxTimeStep & 0xffff0000
-        self.intan.SetWireInValue(WireInMaxTimeStepLsb, maxTimeStep)
+        self.intan.SetWireInValue(WireInMaxTimeStepLsb, maxTimeStepLsb)
         self.intan.SetWireInValue(WireInMaxTimeStepMsb, maxTimeStepMsb >> 16)
         self.intan.UpdateWireIns()
 
     def setCableLengthFeet(self, port, lengthInFeet):
         self.setCableLengthMeters(port, 0.3048 * lengthInFeet)
+
     def setCableLengthMeters(self, port, lengthInMeters):
         speedOfLight = 299792458.0
         xilinxLvdsOutputDelay = 1.9e-9
@@ -398,14 +406,17 @@ class Rhd2000EvalBoard:
         tStep = 1.0 / (2800.0 * self.sampleRate)
         cableVelocity = 0.555 * speedOfLight
         distance = 2.0 * lengthInMeters
-        timeDelay = (distance / cableVelocity) + xilinxLvdsOutputDelay + rhd2000Delay + xilinxLvdsInputDelay + misoSettleTime
+        timeDelay = (
+                            distance / cableVelocity) + xilinxLvdsOutputDelay + rhd2000Delay + xilinxLvdsInputDelay + misoSettleTime
         delay = floor(((timeDelay / tStep) + 1.0) + 0.5)
         if delay < 1:
             delay = 1
         self.setCableDelay(port, delay)
+
     def getSampleRate(self):
         print("No need to be used : use definitions at the top instead.")
         return self.sampleRate
+
     def setCableDelay(self, port, delay):
         if delay < 0 or delay > 15:
             raise Exception("Warning in Rhd2000EvalBoard::setCableDelay: delay out of range: {}".format(delay))
@@ -415,22 +426,24 @@ class Rhd2000EvalBoard:
             delay = 15
 
         switchPort = {
-            PortA: [0,0],
-            PortB: [4,1],
-            PortC: [8,2],
-            PortD: [12,3]
+            PortA: [0, 0],
+            PortB: [4, 1],
+            PortC: [8, 2],
+            PortD: [12, 3]
         }
         i, j = switchPort.get(port, "Error!")
         bitShift = i
         self.cableDelay[j] = delay
         self.intan.SetWireInValue(WireInMisoDelay, delay << bitShift, 0x000f << bitShift)
         self.intan.UpdateWireIns()
+
     def setDspSettle(self, enabled):
         if enabled is True:
             i = 0x04
         else:
             i = 0x00
         self.intan.SetWireInValue(WireInResetRun, i, 0x04)
+
     def setDataSource(self, stream, dataSource):
         if stream < 0 or stream > 7:
             raise Exception("Error in Rhd2000EvalBoard::setDataSource: stream out of range.")
@@ -442,6 +455,7 @@ class Rhd2000EvalBoard:
             bitShift = int((stream - 4) * 4)
         self.intan.SetWireInValue(endPoint, dataSource << bitShift, 0x000f << bitShift)
         self.intan.UpdateWireIns()
+
     def enableDataStream(self, stream, enabled):
         if stream < 0 or stream > MAX_NUM_DATA_STREAMS - 1:
             raise Exception("Error in Rhd2000EvalBoard::setDataSource: stream out of range.")
@@ -457,9 +471,11 @@ class Rhd2000EvalBoard:
                     self.intan.UpdateWireIns()
                     self.dataStreamEnabled[stream] = 0
                     self.numDataStreams = self.numDataStreams - 1
+
     def clearTtlOut(self):
         self.intan.SetWireInValue(WireInTtlOut, 0x0000)
         self.intan.UpdateWireIns()
+
     def enableDac(self, dacChannel, enabled):
         if dacChannel < 0 or dacChannel > 7:
             raise Exception("Error in Rhd2000EvalBoard::enableDac: dacChannel out of range.")
@@ -471,6 +487,7 @@ class Rhd2000EvalBoard:
             i = 0x0000
         self.intan.SetWireInValue(dacSource[dacChannel], i, 0x0200)
         self.intan.UpdateWireIns()
+
     def selectDacDataStream(self, dacChannel, stream):
         if dacChannel < 0 or dacChannel > 7:
             raise Exception("Error in Rhd2000EvalBoard::enableDac: dacChannel out of range.")
@@ -480,6 +497,7 @@ class Rhd2000EvalBoard:
                      WireInDacSource6, WireInDacSource7, WireInDacSource8]
         self.intan.SetWireInValue(dacSource[dacChannel], stream << 5, 0x01e0)
         self.intan.UpdateWireIns()
+
     def selectDacDataChannel(self, dacChannel, dataChannel):
         if dacChannel < 0 or dacChannel > 7:
             raise Exception("Error in Rhd2000EvalBoard::enableDac: dacChannel out of range.")
@@ -489,26 +507,31 @@ class Rhd2000EvalBoard:
                      WireInDacSource6, WireInDacSource7, WireInDacSource8]
         self.intan.SetWireInValue(dacSource[dacChannel], dataChannel << 0, 0x001f)
         self.intan.UpdateWireIns()
+
     def setDacManual(self, value):
         if value < 0 or value > 65535:
             raise Exception("Error in Rhd2000EvalBoard::setDacManual: value out of range.")
         self.intan.SetWireInValue(WireInDacManual, value)
         self.intan.UpdateWireIns()
+
     def setDacGain(self, gain):
         if gain < 0 or gain > 7:
             raise Exception("Error in Rhd2000EvalBoard::setDacGain: gain out of range.")
         self.intan.SetWireInValue(WireInResetRun, gain << 13, 0xe000)
         self.intan.UpdateWireIns()
+
     def setAudioNoiseSuppress(self, noiseSuppress):
         if noiseSuppress < 0 or noiseSuppress > 127:
             raise Exception("Error in Rhd2000EvalBoard::setAudioNoiseSuppress: noiseSuppress out of range.")
         self.intan.SetWireInValue(WireInResetRun, noiseSuppress << 6, 0x1fc0)
         self.intan.UpdateWireIns()
+
     def setTtlMode(self, mode):
         if mode < 0 or mode > 1:
             raise Exception("Error in Rhd2000EvalBoard::setTtlMode: mode out of range.")
         self.intan.SetWireInValue(WireInResetRun, mode << 3, 0x0008)
         self.intan.UpdateWireIns()
+
     def setDacThreshold(self, dacChannel, threshold, trigPolarity):
         if dacChannel < 0 or dacChannel > 7:
             raise Exception("Error in Rhd2000EvalBoard::enableDac: dacChannel out of range.")
@@ -520,16 +543,19 @@ class Rhd2000EvalBoard:
         self.intan.SetWireInValue(WireInMultiUse, 1 if trigPolarity is True else 0)
         self.intan.UpdateWireIns()
         self.intan.ActivateTriggerIn(TrigInDacThresh, dacChannel + 8)
+
     def enableExternalFastSettle(self, enable):
         self.intan.SetWireInValue(WireInMultiUse, 1 if enable is True else 0)
         self.intan.UpdateWireIns()
         self.intan.ActivateTriggerIn(TrigInExtFastSettle, 0)
+
     def setExternalFastSettleChannel(self, channel):
         if channel < 0 or channel > 15:
             raise Exception("Error in Rhd2000EvalBoard::setExternalFastSettleChannel: channel out of range.")
         self.intan.SetWireInValue(WireInMultiUse, channel)
         self.intan.UpdateWireIns()
         self.intan.ActivateTriggerIn(TrigInExtFastSettle, 1)
+
     def enableExternalDigOut(self, port, enable):
         self.intan.SetWireInValue(WireInMultiUse, 1 if enable is True else 0)
         self.intan.UpdateWireIns()
@@ -539,6 +565,7 @@ class Rhd2000EvalBoard:
             self.intan.ActivateTriggerIn(TrigInExtDigOut, i)
         else:
             raise Exception("Error in Rhd2000EvalBoard::enableExternalDigOut: port out of range.")
+
     def setExternalDigOutChannel(self, port, channel):
         if channel < 0 or channel > 15:
             raise Exception("Error in Rhd2000EvalBoard::setExternalDigOutChannel: channel out of range.")
@@ -550,10 +577,12 @@ class Rhd2000EvalBoard:
             self.intan.ActivateTriggerIn(TrigInExtDigOut, i)
         else:
             raise Exception("Error in Rhd2000EvalBoard::setExternalDigOutChannel: port out of range.")
+
     def enableDacHighpassFilter(self, enable):
         self.intan.SetWireInValue(WireInMultiUse, 1 if enable is True else 0)
         self.intan.UpdateWireIns()
         self.intan.ActivateTriggerIn(TrigInDacHpf, 0)
+
     def setDacHighpassFilter(self, cutoff):
         pi = 3.1415926535897
         b = 1.0 - exp(-2.0 * pi * cutoff / self.sampleRate)
@@ -565,26 +594,32 @@ class Rhd2000EvalBoard:
         self.intan.SetWireInValue(WireInMultiUse, filterCoefficient)
         self.intan.UpdateWireIns()
         self.intan.ActivateTriggerIn(TrigInDacHpf, 1)
+
     def numWordsInFifo(self):
         self.intan.UpdateWireOuts()
         value = (self.intan.GetWireOutValue(WireOutNumWordsMsb) << 16) + self.intan.GetWireOutValue(WireOutNumWordsLsb)
         return value
+
     def fifoCapacityInWords(self):
         return FIFO_CAPACITY_WORDS
+
     def flush(self):
         while self.numWordsInFifo() >= USB_BUFFER_SIZE / 2:
             self.intan.ReadFromPipeOut(PipeOutData, USB_BUFFER_SIZE, self.usbBuffer)
             # ReadFromPipeOut overwrites usbBuffer with PipeOutData(new incoming data)
         while self.numWordsInFifo() > 0:
-            self.intan.ReadFromPipeOut(PipeOutData, 2*self.numWordsInFifo(), self.usbBuffer)
+            self.intan.ReadFromPipeOut(PipeOutData, 2 * self.numWordsInFifo(), self.usbBuffer)
+
     def opalKellyModelName(self, model):
         if model == ok.OK_PRODUCT_XEM6010LX45:
             return 'XEM6010LX45'
         else:
             return 'Unknown'
         # We only use XEM6010lx45
+
     def run(self):
         self.intan.ActivateTriggerIn(TrigInSpiStart, 0)
+
     def isRunning(self):
         self.intan.UpdateWireOuts()
         value = self.intan.GetWireOutValue(WireOutSpiRunning)
@@ -592,6 +627,7 @@ class Rhd2000EvalBoard:
             return False
         else:
             return True
+
     def setTtlOut(self, ttlOutArray):
         ttlOut = 0
         for i in range(16):
@@ -599,6 +635,7 @@ class Rhd2000EvalBoard:
                 ttlOut += 1 << i
         self.intan.SetWireInValue(WireInTtlOut, ttlOut)
         self.intan.UpdateWireIns()
+
     def getTtlIn(self, ttlInArray):
         self.intan.UpdateWireOuts()
         ttlIn = self.intan.GetWireOutValue(WireOutTtlIn)
@@ -606,6 +643,7 @@ class Rhd2000EvalBoard:
             ttlInArray[i] = 0
             if (ttlIn & (1 << i)) > 0:
                 ttlInArray[i] = 1
+
     def setLedDisplay(self, ledArray):
         ledOut = 0
         for i in range(8):
@@ -613,6 +651,7 @@ class Rhd2000EvalBoard:
                 ledOut += 1 << i
         self.intan.SetWireInValue(WireInLedDisplay, ledOut)
         self.intan.UpdateWireIns()
+
     def estimateCableLengthMeters(self, delay):
         speedOfLight = 299792458.0
         xilinxLvdsOutputDelay = 1.9e-9
@@ -621,15 +660,19 @@ class Rhd2000EvalBoard:
         misoSettleTime = 6.7e-9
         tStep = 1.0 / (2800.0 * self.getSampleRate())
         cableVelocity = 0.555 * speedOfLight
-        distance = cableVelocity * (((delay) - 1.0) * tStep - (xilinxLvdsOutputDelay + rhd2000Delay + xilinxLvdsInputDelay + misoSettleTime))
+        distance = cableVelocity * (((delay) - 1.0) * tStep - (
+                xilinxLvdsOutputDelay + rhd2000Delay + xilinxLvdsInputDelay + misoSettleTime))
         if distance < 0.0:
             distance = 0.0
-        return distance/2.0
+        return distance / 2.0
+
     def estimateCableLengthFeet(self, delay):
         return 3.2808 * self.estimateCableLengthMeters(delay)
+
     def getSampleRateEnum(self):
         return self.sampleRate
-    def printCommandList(self, commandList, auxCommandSlot, bank):
+
+    def printCommandList(self, commandList):
         print("")
         for i in range(len(commandList)):
             cmd = commandList[i]
@@ -652,6 +695,7 @@ class Rhd2000EvalBoard:
             else:
                 print("command[{}] = INVALID COMMAND".format(i))
         print("")
+
     def queueToFile(self, dataQueue, dataBlock, saveOut):
         # dataQueue is queue class, saveOut is binary file open
         count = 0
@@ -664,6 +708,7 @@ class Rhd2000EvalBoard:
 
     def getNumEnabledDataStreams(self):
         return self.numDataStreams
+
     def uploadCommandList(self, commandList, auxCommandSlot, bank):
         if auxCommandSlot != AuxCmd1 and auxCommandSlot != AuxCmd2 and auxCommandSlot != AuxCmd3:
             raise Exception("Error in Rhd2000EvalBoard::uploadCommandList: auxCommandSlot out of range.")
@@ -676,22 +721,24 @@ class Rhd2000EvalBoard:
             self.intan.UpdateWireIns()
             if auxCommandSlot == AuxCmd1:
                 self.intan.ActivateTriggerIn(TrigInRamWrite, 0)
-            elif auxCommandSlot ==  AuxCmd2:
+            elif auxCommandSlot == AuxCmd2:
                 self.intan.ActivateTriggerIn(TrigInRamWrite, 1)
             elif auxCommandSlot == AuxCmd3:
                 self.intan.ActivateTriggerIn(TrigInRamWrite, 2)
+
     def readDataBlock(self, dataBlock):
         # dataBlock : rhd2000datablock class obj
-        numBytesToRead = 2* dataBlock.calculateDataBlockSizeInWords(self.numDataStreams)
+        numBytesToRead = 2 * dataBlock.calculateDataBlockSizeInWords(self.numDataStreams)
         if numBytesToRead > USB_BUFFER_SIZE:
             raise Exception("Error in Rhd2000EvalBoard::readDataBlock: USB buffer size exceeded.  ")
             return False
         self.intan.ReadFromPipeOut(PipeOutData, numBytesToRead, self.usbBuffer)
         dataBlock.fillFromUsbBuffer(self.usbBuffer, 0, self.numDataStreams)
         return True
+
     def readDataBlocks(self, numBlocks, dataQueue, dataBlock):
-        #dataQueue is a Queue object containing dataBlock
-        #added dataBlock
+        # dataQueue is a Queue object containing dataBlock
+        # added dataBlock
         numWordsToRead = numBlocks * dataBlock.calculateDataBlockSizeInWords(self.numDataStreams)
         if self.numWordsInFifo() < numWordsToRead:
             return False
@@ -709,8 +756,8 @@ class Rhd2000EvalBoard:
                 if sample > 0:
                     sample = sample - 1
                     index = index - sampleSizeInBytes
-                lag = sampleSizeInBytes/2
-                for i in range(sampleSizeInBytes/2):
+                lag = sampleSizeInBytes / 2
+                for i in range(sampleSizeInBytes / 2):
                     if dataBlock.checkUsbHeader(self.usbBuffer, index + 2 * i):
                         lag = i
                         pass
@@ -721,6 +768,7 @@ class Rhd2000EvalBoard:
             dataQueue.put(dataBlock)
         del dataBlock
         return True
+
     def readAdditionalDataWords(self, numWords, errorPoint, bufferLength):
         numBytes = 2 * numWords
         for i in range(errorPoint, bufferLength - numBytes, 2):
@@ -729,11 +777,13 @@ class Rhd2000EvalBoard:
         while self.numWordsInFifo() < numWords:
             pass
         self.intan.ReadFromPipeOut(PipeOutData, numBytes, self.usbBuffer[bufferLength - numBytes])
+
     def getBoardMode(self):
         self.intan.UpdateWireOuts()
         mode = self.intan.GetWireOutValue(WireOutBoardMode)
         print("Board Mode : {}".format(mode))
         return mode
+
     def getCableDelay(self, port):
         if port == PortA:
             return self.cableDelay[0]
@@ -746,27 +796,13 @@ class Rhd2000EvalBoard:
         else:
             raise Exception("Error in RHD2000EvalBoard::getCableDelay: unknown port.")
             return -1
+
     def getCableDelay(self, delays):
         if len(delays) != 4:
             resizeArray(delays, 4)
         for i in range(4):
             delays[i] = self.cableDelay[i]
         return delays
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 # RHD2000DATABLOCK
@@ -911,12 +947,12 @@ class Rhd2000DataBlock:
         RamOffset = 37
         print("")
         print("RHD 2000 Data Block contents:\n  ROM contents:\n    Chip Name: ")
-        print(self.auxiliaryData[stream][2][24] + self.auxiliaryData[stream][2][25] + self.auxiliaryData[stream][2][26] \
+        print(self.auxiliaryData[stream][2][24] + self.auxiliaryData[stream][2][25] + self.auxiliaryData[stream][2][26]
               + self.auxiliaryData[stream][2][27] + self.auxiliaryData[stream][2][28] + self.auxiliaryData[stream][2][
-                  29] \
+                  29]
               + self.auxiliaryData[stream][2][30] + self.auxiliaryData[stream][2][31])
         print("    Company Name:")
-        print(self.auxiliaryData[stream][2][32] + self.auxiliaryData[stream][2][33] + self.auxiliaryData[stream][2][34] \
+        print(self.auxiliaryData[stream][2][32] + self.auxiliaryData[stream][2][33] + self.auxiliaryData[stream][2][34]
               + self.auxiliaryData[stream][2][35] + self.auxiliaryData[stream][2][36])
         print("    Intan Chip ID: {}".format(self.auxiliaryData[stream][2][19]))
         print("    Number of Amps: {}".format(self.auxiliaryData[stream][2][20]))
@@ -976,11 +1012,10 @@ class Rhd2000DataBlock:
         tempA = self.auxiliaryData[stream][1][12]
         tempB = self.auxiliaryData[stream][1][20]
         vddSample = self.auxiliaryData[stream][1][28]
-        tempUnitsC = ((tempB - tempA)) / 98.9 - 273.15
+        tempUnitsC = (tempB - tempA) / 98.9 - 273.15
         tempUnitsF = (9.0 / 5.0) * tempUnitsC + 32.0
-        vddSense = 0.0000748 * (vddSample)
+        vddSense = 0.0000748 * vddSample
         print("  Temperature sensor (only one reading): {}".format(round(tempUnitsC, 2)))
-
 
 
 
@@ -999,12 +1034,6 @@ ZcheckCs10pF = 'ZcheckCs10pF'
 
 ZcheckPositiveInput = 'ZcheckPositiveInput'
 ZcheckNegativeInput = 'ZcheckNegativeInput'
-
-Rhd2000CommandConvert = 'Rhd2000CommandConvert'
-Rhd2000CommandCalibrate = 'Rhd2000CommandCalibrate'
-Rhd2000CommandCalClear = 'Rhd2000CommandCalClear'
-Rhd2000CommandRegWrite = 'Rhd2000CommandRegWrite'
-Rhd2000CommandRegRead = 'Rhd2000CommandRegRead'
 
 Rhd2000CommandConvert = 'Rhd2000CommandConvert'
 Rhd2000CommandCalibrate = 'Rhd2000CommandCalibrate'
@@ -1120,7 +1149,7 @@ class Rhd2000Registers:
             logNewDspCutoffFreq = math.log10(newDspCutoffFreq)
             for n in range(16):
                 x = math.pow(2.0, float(n))
-                fCutoff[n] = self.sampleRate * math.log(x / (x - 1.0)) / (2*Pi)
+                fCutoff[n] = self.sampleRate * math.log(x / (x - 1.0)) / (2 * Pi)
                 logFCutoff[n] = math.log10(fCutoff[n])
             if newDspCutoffFreq > fCutoff[1]:
                 self.dspCutoffFreq = 1
@@ -1136,7 +1165,7 @@ class Rhd2000Registers:
         elif len(args) == 0:
             Pi = 2 * math.acos(0.0)
             x = math.pow(2.0, self.dspCutoffFreq)
-            return self.sampleRate * math.log(x / (x - 1.0)) / (2*Pi)
+            return self.sampleRate * math.log(x / (x - 1.0)) / (2 * Pi)
         else:
             raise Exception("Error in function SetDspCutoffFreq()")
 
@@ -1150,7 +1179,7 @@ class Rhd2000Registers:
             self.zcheckScale = 0x03
 
     def setZcheckPolarity(self, polarity):
-        #polarity is enum(zcheckpolarity)
+        # polarity is enum(zcheckpolarity)
         if polarity == ZcheckPositiveInput:
             self.zcheckSelPol = 0
         elif polarity == ZcheckNegativeInput:
@@ -1179,7 +1208,7 @@ class Rhd2000Registers:
         RH2Dac1Steps = 63
         RH2Dac2Steps = 31
 
-        if upperBandwidth > 30000.0 :
+        if upperBandwidth > 30000.0:
             upperBandwidth = 30000.0
 
         rH1Target = self.rH1FromUpperBandwidth(upperBandwidth)
@@ -1187,11 +1216,11 @@ class Rhd2000Registers:
         self.rH1Dac2 = 0
         rH1Actual = RH1Base
 
-        for i in range(RH1Dac2Steps) :
+        for i in range(RH1Dac2Steps):
             if rH1Actual < rH1Target - (RH1Dac2Unit - RH1Dac2Unit / 2):
                 rH1Actual += RH1Dac2Unit
                 self.rH1Dac2 += 1
-        for i in range(RH1Dac1Steps) :
+        for i in range(RH1Dac1Steps):
             if rH1Actual < rH1Target - (RH1Dac1Unit / 2):
                 rH1Actual += RH1Dac1Unit
                 self.rH1Dac1 += 1
@@ -1246,11 +1275,35 @@ class Rhd2000Registers:
 
         if lowerBandwidth > 1500.0:
             lowerBandwidth = 1500.0
+        rLTarget = self.rLFromLowerBandwidth(lowerBandwidth)
+        self.rLDac1 = 0
+        self.rLDac2 = 0
+        self.rLDac3 = 0
+        rLActual = RLBase
+
+        if lowerBandwidth < 0.15:
+            rLActual += RLDac3Unit
+            self.rLDac3 += 1
+
+        for i in range(RLDac2Steps):
+            if rLActual < rLTarget - (RLDac2Unit - RLDac1Unit / 2) :
+                rLActual += RLDac2Unit
+                self.rLDac2 += 1
+
+        for i in range(RLDac1Steps):
+            if rLActual < rLTarget - (RLDac1Unit / 2):
+                rLActual += RLDac1Unit
+                self.rLDac1 += 1
+
+        actualLowerBandwidth = self.lowerBandwidthFromRL(rLActual)
+
+        return actualLowerBandwidth
 
     def rLFromLowerBandwidth(self, lowerBandwidth):
         log10f = math.log10(lowerBandwidth)
         if lowerBandwidth < 4.0:
-            return 1.0061 * math.pow(10.0, (4.9391 - 1.2088 * log10f + 0.5698 * log10f * log10f + 0.1442 * log10f * log10f * log10f))
+            return 1.0061 * math.pow(10.0, (
+                    4.9391 - 1.2088 * log10f + 0.5698 * log10f * log10f + 0.1442 * log10f * log10f * log10f))
         else:
             return 1.0061 * math.pow(10.0, (4.7351 - 0.5916 * log10f + 0.08482 * log10f * log10f))
 
@@ -1286,7 +1339,7 @@ class Rhd2000Registers:
         self.rLDac3 = 0
         rLActual = RLBase
 
-        if lowerBandwidth < 0.15 :
+        if lowerBandwidth < 0.15:
             rLActual += RLDac3Unit
             self.rLDac3 += 1
         for i in range(RLDac2Steps):
@@ -1331,17 +1384,21 @@ class Rhd2000Registers:
     def getRegisterValue(self, reg):
         zcheckDac = 128
         if reg == 0:
-            regout = (self.adcReferenceBw << 6) + (self.ampFastSettle << 5) + (self.ampVrefEnable << 4) + (self.adcComparatorBias << 2) + self.adcComparatorSelect
+            regout = (self.adcReferenceBw << 6) + (self.ampFastSettle << 5) + (self.ampVrefEnable << 4) + (
+                    self.adcComparatorBias << 2) + self.adcComparatorSelect
         elif reg == 1:
             regout = (self.vddSenseEnable << 6) + self.adcBufferBias
         elif reg == 2:
             regout = self.muxBias
         elif reg == 3:
-            regout = (self.muxLoad << 5) + (self.tempS2 << 4) + (self.tempS1 << 3) + (self.tempEn << 2) + (self.digOutHiZ << 1) + self.digOut
+            regout = (self.muxLoad << 5) + (self.tempS2 << 4) + (self.tempS1 << 3) + (self.tempEn << 2) + (
+                    self.digOutHiZ << 1) + self.digOut
         elif reg == 4:
-            regout = (self.weakMiso << 7) + (self.twosComp << 6) + (self.absMode << 5) + (self.dspEn << 4) + self.dspCutoffFreq
+            regout = (self.weakMiso << 7) + (self.twosComp << 6) + (self.absMode << 5) + (
+                    self.dspEn << 4) + self.dspCutoffFreq
         elif reg == 5:
-            regout = (self.zcheckDacPower << 6) + (self.zcheckLoad << 5) + (self.zcheckScale << 3) + (self.zcheckConnAll << 2) + (self.zcheckSelPol << 1) + self.zcheckEn
+            regout = (self.zcheckDacPower << 6) + (self.zcheckLoad << 5) + (self.zcheckScale << 3) + (
+                    self.zcheckConnAll << 2) + (self.zcheckSelPol << 1) + self.zcheckEn
         elif reg == 6:
             regout = zcheckDac
         elif reg == 7:
@@ -1359,21 +1416,29 @@ class Rhd2000Registers:
         elif reg == 13:
             regout = (self.adcAux3En << 7) + (self.rLDac3 << 6) + self.rLDac2
         elif reg == 14:
-            regout = (self.aPwr[7] << 7) + (self.aPwr[6] << 6) + (self.aPwr[5] << 5) + (self.aPwr[4] << 4) + (self.aPwr[3] << 3) + (self.aPwr[2] << 2) + (self.aPwr[1] << 1) + self.aPwr[0]
+            regout = (self.aPwr[7] << 7) + (self.aPwr[6] << 6) + (self.aPwr[5] << 5) + (self.aPwr[4] << 4) + (
+                    self.aPwr[3] << 3) + (self.aPwr[2] << 2) + (self.aPwr[1] << 1) + self.aPwr[0]
         elif reg == 15:
-            regout = (self.aPwr[15] << 7) + (self.aPwr[14] << 6) + (self.aPwr[13] << 5) + (self.aPwr[12] << 4) + (self.aPwr[11] << 3) + (self.aPwr[10] << 2) + (self.aPwr[9] << 1) + self.aPwr[0]
+            regout = (self.aPwr[15] << 7) + (self.aPwr[14] << 6) + (self.aPwr[13] << 5) + (self.aPwr[12] << 4) + (
+                    self.aPwr[11] << 3) + (self.aPwr[10] << 2) + (self.aPwr[9] << 1) + self.aPwr[0]
         elif reg == 16:
-            regout = (self.aPwr[23] << 7) + (self.aPwr[22] << 6) + (self.aPwr[21] << 5) + (self.aPwr[20] << 4) + (self.aPwr[19] << 3) + (self.aPwr[18] << 2) + (self.aPwr[17] << 1) + self.aPwr[16]
+            regout = (self.aPwr[23] << 7) + (self.aPwr[22] << 6) + (self.aPwr[21] << 5) + (self.aPwr[20] << 4) + (
+                    self.aPwr[19] << 3) + (self.aPwr[18] << 2) + (self.aPwr[17] << 1) + self.aPwr[16]
         elif reg == 17:
-            regout = (self.aPwr[31] << 7) + (self.aPwr[30] << 6) + (self.aPwr[29] << 5) + (self.aPwr[28] << 4) + (self.aPwr[27] << 3) + (self.aPwr[26] << 2) + (self.aPwr[25] << 1) + self.aPwr[24]
+            regout = (self.aPwr[31] << 7) + (self.aPwr[30] << 6) + (self.aPwr[29] << 5) + (self.aPwr[28] << 4) + (
+                    self.aPwr[27] << 3) + (self.aPwr[26] << 2) + (self.aPwr[25] << 1) + self.aPwr[24]
         elif reg == 18:
-            regout = (self.aPwr[39] << 7) + (self.aPwr[38] << 6) + (self.aPwr[37] << 5) + (self.aPwr[36] << 4) + (self.aPwr[35] << 3) + (self.aPwr[34] << 2) + (self.aPwr[33] << 1) + self.aPwr[32]
+            regout = (self.aPwr[39] << 7) + (self.aPwr[38] << 6) + (self.aPwr[37] << 5) + (self.aPwr[36] << 4) + (
+                    self.aPwr[35] << 3) + (self.aPwr[34] << 2) + (self.aPwr[33] << 1) + self.aPwr[32]
         elif reg == 19:
-            regout = (self.aPwr[47] << 7) + (self.aPwr[46] << 6) + (self.aPwr[45] << 5) + (self.aPwr[44] << 4) + (self.aPwr[43] << 3) + (self.aPwr[42] << 2) + (self.aPwr[41] << 1) + self.aPwr[40]
+            regout = (self.aPwr[47] << 7) + (self.aPwr[46] << 6) + (self.aPwr[45] << 5) + (self.aPwr[44] << 4) + (
+                    self.aPwr[43] << 3) + (self.aPwr[42] << 2) + (self.aPwr[41] << 1) + self.aPwr[40]
         elif reg == 20:
-            regout = (self.aPwr[55] << 7) + (self.aPwr[54] << 6) + (self.aPwr[53] << 5) + (self.aPwr[52] << 4) + (self.aPwr[51] << 3) + (self.aPwr[50] << 2) + (self.aPwr[49] << 1) + self.aPwr[48]
+            regout = (self.aPwr[55] << 7) + (self.aPwr[54] << 6) + (self.aPwr[53] << 5) + (self.aPwr[52] << 4) + (
+                    self.aPwr[51] << 3) + (self.aPwr[50] << 2) + (self.aPwr[49] << 1) + self.aPwr[48]
         elif reg == 21:
-            regout = (self.aPwr[63] << 7) + (self.aPwr[62] << 6) + (self.aPwr[61] << 5) + (self.aPwr[60] << 4) + (self.aPwr[59] << 3) + (self.aPwr[58] << 2) + (self.aPwr[57] << 1) + self.aPwr[56]
+            regout = (self.aPwr[63] << 7) + (self.aPwr[62] << 6) + (self.aPwr[61] << 5) + (self.aPwr[60] << 4) + (
+                    self.aPwr[59] << 3) + (self.aPwr[58] << 2) + (self.aPwr[57] << 1) + self.aPwr[56]
         else:
             regout = -1
 
@@ -1388,7 +1453,8 @@ class Rhd2000Registers:
             elif commandType == Rhd2000CommandCalClear:
                 return 0x6a00
             else:
-                raise Exception("Error in Rhd2000Registers::createRhd2000Command: \nOnly 'Calibrate' or 'Clear Calibration' commands take zero arguments.")
+                raise Exception(
+                    "Error in Rhd2000Registers::createRhd2000Command: \nOnly 'Calibrate' or 'Clear Calibration' commands take zero arguments.")
                 return -1
         elif len(args) == 2:
             arg1 = args[1]
@@ -1404,7 +1470,8 @@ class Rhd2000Registers:
                     return -1
                 return 0xc000 + (arg1 << 8)
             else:
-                raise Exception("Error in Rhd2000Registers::createRhd2000Command: \nOnly 'Convert' and 'Register Read' commands take one argument.")
+                raise Exception(
+                    "Error in Rhd2000Registers::createRhd2000Command: \nOnly 'Convert' and 'Register Read' commands take one argument.")
                 return -1
         elif len(args) == 3:
             arg2 = args[2]
@@ -1420,7 +1487,8 @@ class Rhd2000Registers:
 
                 return 0x8000 + (arg1 << 8) + arg2
             else:
-                raise Exception("Error in Rhd2000Registers::createRhd2000Command: \nOnly 'Register Write' commands take two arguments.")
+                raise Exception(
+                    "Error in Rhd2000Registers::createRhd2000Command: \nOnly 'Register Write' commands take two arguments.")
                 return -1
 
     def createCommandListRegisterConfig(self, commandList, calibrate):
@@ -1613,7 +1681,8 @@ class Rhd2000Registers:
             raise Exception("Error in Rhd2000Registers::createCommandListZcheckDac: Negative frequency not allowed.")
             return -1
         elif frequency > self.sampleRate / 4.0:
-            raise Exception("Error in Rhd2000Registers::createCommandListZcheckDac: \nFrequency too high relative to sampling rate.")
+            raise Exception(
+                "Error in Rhd2000Registers::createCommandListZcheckDac: \nFrequency too high relative to sampling rate.")
             return -1
         if frequency == 0.0:
             for i in range(MaxCommandLength):
@@ -1632,6 +1701,5 @@ class Rhd2000Registers:
                     elif value > 255:
                         value = 255
                     commandList.append(self.createRhd2000Command(Rhd2000CommandRegWrite, 6, value))
-                    t += 1.0/self.sampleRate
+                    t += 1.0 / self.sampleRate
         return int(len(commandList))
-

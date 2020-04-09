@@ -3,6 +3,7 @@
 SAMPLES_PER_DATA_BLOCK = 60
 RHD2000_HEADER_MAGIC_NUMBER = 0xc691199927021942
 
+
 def resizeArray(array, size):
     length = len(array)
     if length > size:
@@ -14,10 +15,11 @@ def resizeArray(array, size):
         for i in range(size - length):
             array.append(zeroth)
 
+
 class Rhd2000DataBlock:
     def __init__(self, numDataStreams):
         # Just Defining Data Structures
-        self.timeStamp = [0]*SAMPLES_PER_DATA_BLOCK  # Not Sure
+        self.timeStamp = [0] * SAMPLES_PER_DATA_BLOCK  # Not Sure
         self.amplifierData = [[[0]]]
         self.auxiliaryData = [[[0]]]
         self.boardAdcData = [[0]]
@@ -32,22 +34,28 @@ class Rhd2000DataBlock:
 
     def allocateIntArray1D(self, array1D, xSize):
         resizeArray(array1D, xSize)
+
     def allocateUIntArray1D(self, array1D, xSize):
         resizeArray(array1D, xSize)
+
     def allocateIntArray2D(self, array2D, xSize, ySize):
         resizeArray(array2D, xSize)
         for i in range(xSize):
             resizeArray(array2D[i], ySize)
+
     def allocateIntArray3D(self, array3D, xSize, ySize, zSize):
         resizeArray(array3D, xSize)
         for i in range(xSize):
             resizeArray(array3D[i], ySize)
             for j in range(ySize):
                 resizeArray(array3D[i][j], zSize)
+
     def getSamplesPerDataBlock(self):
         return SAMPLES_PER_DATA_BLOCK
+
     def calculateDataBlockSizeInWords(self, numDataStreams):
         return SAMPLES_PER_DATA_BLOCK * (4 + 2 + numDataStreams * 36 + 8 + 2)
+
     def checkUsbHeader(self, usbBuffer, index):
         print('Running checkUsbHeader(rhd2000datablock)')
         x1 = usbBuffer[index]
@@ -61,17 +69,20 @@ class Rhd2000DataBlock:
         header = (x8 << 56) + (x7 << 48) + (x6 << 40) + (x5 << 32) + (x4 << 24) + (x3 << 16) + (x2 << 8) + (x1 << 0)
         print(header)
         return header == RHD2000_HEADER_MAGIC_NUMBER
+
     def convertUsbTimeStamp(self, usbBuffer, index):
         x1 = usbBuffer[index]
         x2 = usbBuffer[index + 1]
         x3 = usbBuffer[index + 2]
         x4 = usbBuffer[index + 3]
         return (x4 << 24) + (x3 << 16) + (x2 << 8) + (x1 << 0)
+
     def convertUsbWord(self, usbBuffer, index):
         x1 = usbBuffer[index]
         x2 = usbBuffer[index + 1]
         result = (x2 << 8) | (x1 << 0)
         return result
+
     def fillFromUsbBuffer(self, usbBuffer, blockIndex, numDataStreams):
         index = blockIndex * 2 * self.calculateDataBlockSizeInWords(numDataStreams)
         for t in range(SAMPLES_PER_DATA_BLOCK):
@@ -99,6 +110,7 @@ class Rhd2000DataBlock:
             index += 2
             self.ttlOut[t] = self.convertUsbWord(usbBuffer, index)
             index += 2
+
     # THIS PART WAS MODIFIED TO RETURN A VALUE : INCOMPATIBILITY WITH POINTERS
     def writeWordLittleEndian(self, outputStream, dataWord):
         lsb = dataWord & 0x00ff
@@ -106,6 +118,7 @@ class Rhd2000DataBlock:
         outputStream = outputStream << lsb
         outputStream = outputStream << msb
         return outputStream
+
     # Not really sure about this
     def write(self, saveOut, numDataStreams):
         for t in range(SAMPLES_PER_DATA_BLOCK):
@@ -121,16 +134,18 @@ class Rhd2000DataBlock:
             saveOut = self.writeWordLittleEndian(saveOut, self.ttlIn[t])
             saveOut = self.writeWordLittleEndian(saveOut, self.ttlOut[t])
         return saveOut
+
     # print Replaced by rhdPrint
     def rhdPrint(self, stream):
         RamOffset = 37
         print("")
         print("RHD 2000 Data Block contents:\n  ROM contents:\n    Chip Name: ")
-        print(self.auxiliaryData[stream][2][24] + self.auxiliaryData[stream][2][25] + self.auxiliaryData[stream][2][26]\
-              + self.auxiliaryData[stream][2][27] + self.auxiliaryData[stream][2][28] + self.auxiliaryData[stream][2][29]\
+        print(self.auxiliaryData[stream][2][24] + self.auxiliaryData[stream][2][25] + self.auxiliaryData[stream][2][26]
+              + self.auxiliaryData[stream][2][27] + self.auxiliaryData[stream][2][28] + self.auxiliaryData[stream][2][
+                  29]
               + self.auxiliaryData[stream][2][30] + self.auxiliaryData[stream][2][31])
         print("    Company Name:")
-        print(self.auxiliaryData[stream][2][32] + self.auxiliaryData[stream][2][33] + self.auxiliaryData[stream][2][34]\
+        print(self.auxiliaryData[stream][2][32] + self.auxiliaryData[stream][2][33] + self.auxiliaryData[stream][2][34]
               + self.auxiliaryData[stream][2][35] + self.auxiliaryData[stream][2][36])
         print("    Intan Chip ID: {}".format(self.auxiliaryData[stream][2][19]))
         print("    Number of Amps: {}".format(self.auxiliaryData[stream][2][20]))
@@ -152,7 +167,8 @@ class Rhd2000DataBlock:
         print("    ADC buffer bias:       {}".format((self.auxiliaryData[stream][2][RamOffset + 1] & 0x3f) >> 0))
         print("    MUX bias:              {}".format((self.auxiliaryData[stream][2][RamOffset + 2] & 0x3f) >> 0))
         print("    MUX load:              {}".format((self.auxiliaryData[stream][2][RamOffset + 3] & 0xe0) >> 5))
-        print("    tempS2, tempS1:        {}, {}".format(((self.auxiliaryData[stream][2][RamOffset + 3] & 0x10) >> 4), ((self.auxiliaryData[stream][2][RamOffset + 3] & 0x08) >> 3)))
+        print("    tempS2, tempS1:        {}, {}".format(((self.auxiliaryData[stream][2][RamOffset + 3] & 0x10) >> 4),
+                                                         ((self.auxiliaryData[stream][2][RamOffset + 3] & 0x08) >> 3)))
         print("    tempen:                {}".format((self.auxiliaryData[stream][2][RamOffset + 3] & 0x04) >> 2))
         print("    digout HiZ:            {}".format((self.auxiliaryData[stream][2][RamOffset + 3] & 0x02) >> 1))
         print("    digout:                {}".format((self.auxiliaryData[stream][2][RamOffset + 3] & 0x01) >> 0))
@@ -189,8 +205,7 @@ class Rhd2000DataBlock:
         tempA = self.auxiliaryData[stream][1][12]
         tempB = self.auxiliaryData[stream][1][20]
         vddSample = self.auxiliaryData[stream][1][28]
-        tempUnitsC = ((tempB - tempA)) / 98.9 - 273.15
+        tempUnitsC = (tempB - tempA) / 98.9 - 273.15
         tempUnitsF = (9.0 / 5.0) * tempUnitsC + 32.0
-        vddSense = 0.0000748 * (vddSample)
+        vddSense = 0.0000748 * vddSample
         print("  Temperature sensor (only one reading): {}".format(round(tempUnitsC, 2)))
-        

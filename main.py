@@ -88,10 +88,19 @@ while evalboard.isRunning() is True:
 
 print('Number of 16-bit words in FIFO : {}'.format(evalboard.numWordsInFifo()))
 
-dataBlock = rhd2kbd.Rhd2000DataBlock(evalboard.getNumEnabledDataStreams())
-evalboard.readDataBlock(dataBlock)
+dataBlock5 = rhd2kbd.Rhd2000DataBlock(evalboard.getNumEnabledDataStreams())
+evalboard.readDataBlock(dataBlock5)
 
-dataBlock.rhdPrint(0)
+dataBlock5.rhdPrint(0)
+
+
+print("Number of 16-bit words in FIFO : {}".format(evalboard.numWordsInFifo()))
+
+evalboard.flush()
+evalboard.resetBoard()
+
+
+print("Number of 16-bit words in FIFO : {}".format(evalboard.numWordsInFifo()))
 
 print('FIN')
 

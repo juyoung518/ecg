@@ -203,7 +203,9 @@ class Rhd2000DataBlock:
         rL = 3300.0 + rLDac3 * 3000000.0 + rLDac2 * 15400.0 + rLDac1 * 190.0
         # 275 ~ 318 skip
         tempA = self.auxiliaryData[stream][1][12]
+        print(tempA)
         tempB = self.auxiliaryData[stream][1][20]
+        print(tempB)
         vddSample = self.auxiliaryData[stream][1][28]
         tempUnitsC = (tempB - tempA) / 98.9 - 273.15
         tempUnitsF = (9.0 / 5.0) * tempUnitsC + 32.0

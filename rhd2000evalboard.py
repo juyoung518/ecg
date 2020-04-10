@@ -5,6 +5,7 @@ import Queue
 import ok
 from sys import exit
 from math import floor, exp
+import copy
 
 # Variable Definitions
 global USB_BUFFER_SIZE
@@ -103,6 +104,40 @@ PortA2, PortB2, PortC2, PortD2 = ['1', '3', '5', '7']
 
 
 # Global variables
+
+def fillFromUsbBuffer(dataBlock, usbBuffer, blockIndex, numDataStreams):
+    index = blockIndex * 2 * dataBlock.calculateDataBlockSizeInWords(numDataStreams)
+    for t in range(SAMPLES_PER_DATA_BLOCK):
+        #if dataBlock.checkUsbHeader(usbBuffer, index) is False:
+            #raise Exception("Error in Rhd2000EvalBoard::readDataBlock: Incorrect header.")
+        index = index + 8
+        dataBlock.timeStamp[t] = dataBlock.convertUsbTimeStamp(usbBuffer, index)
+        index = index + 4
+        for channel in range(3):
+            for stream in range(numDataStreams):
+                dataBlock.auxiliaryData[stream][channel][t] = dataBlock.convertUsbWord(usbBuffer, index)
+                if t == 28 and channel == 1:
+                    print("usbBuffer for Voltage readings : {}".format(usbBuffer[index]))
+                    print("usbBuffer -> Converted : {}".format(dataBlock.auxiliaryData[stream][channel][t]))
+                if t == 12 and channel == 1:
+                    print("usbBuffer for tempA readings : {}".format(usbBuffer[index]))
+                    print("tempA -> Converted : {}".format(dataBlock.auxiliaryData[stream][channel][t]))
+                if t == 20 and channel == 1:
+                    print("usbBuffer for tempB readings : {}".format(usbBuffer[index]))
+                    print("tempB -> Converted : {}".format(dataBlock.auxiliaryData[stream][channel][t]))
+                index = index + 2
+        for channel in range(32):
+            for stream in range(numDataStreams):
+                dataBlock.amplifierData[stream][channel][t] = dataBlock.convertUsbWord(usbBuffer, index)
+                index = index + 2
+            index = index + 2 * numDataStreams
+            for i in range(8):
+                dataBlock.boardAdcData[i][t] = dataBlock.convertUsbWord(usbBuffer, index)
+                index = index + 2
+            dataBlock.ttlIn[t] = dataBlock.convertUsbWord(usbBuffer, index)
+            index = index + 2
+            dataBlock.ttlOut[t] = dataBlock.convertUsbWord(usbBuffer, index)
+            index += 2
 
 
 # --------- RHDEVALBOARD.CPP
@@ -231,6 +266,7 @@ class Rhd2000EvalBoard:
             SampleRate30000Hz: [42, 25]
         }
         M, D = sampleSwitch.get(newSampleRate, "Error!")
+        print("M, D = {}, {}".format(M, D))
 
         self.sampleRate = newSampleRate
 
@@ -454,6 +490,7 @@ class Rhd2000EvalBoard:
         else:
             i = 0x00
         self.intan.SetWireInValue(WireInResetRun, i, 0x04)
+        self.intan.UpdateWireIns()
 
     def setDataSource(self, stream, dataSource):
         if stream < 0 or stream > 7:
@@ -749,42 +786,6 @@ class Rhd2000EvalBoard:
         dataBlock.fillFromUsbBuffer(self.usbBuffer, 0, self.numDataStreams)
         return True
 
-    def readDataBlocks(self, numBlocks, dataQueue, dataBlock):
-        # May be broken : NOT TESTED
-        # dataQueue is a Queue object containing dataBlock
-        # added dataBlock
-        numWordsToRead = numBlocks * dataBlock.calculateDataBlockSizeInWords(self.numDataStreams)
-        if self.numWordsInFifo() < numWordsToRead:
-            return False
-        numBytesToRead = 2 * numWordsToRead
-        if numBytesToRead > USB_BUFFER_SIZE:
-            raise Exception("Error in Rhd2000EvalBoard::readDataBlocks: USB buffer size exceeded.  ")
-            return False
-        buffer = bytearray("\x00" * numBytesToRead)
-        self.intan.ReadFromPipeOut(PipeOutData, buffer)
-        self.usbBuffer = buffer
-        dataBlock = Rhd2000DataBlock(self.numDataStreams)
-        dataBlockSizeInBytes = 2 * dataBlock.calculateDataBlockSizeInWords(self.numDataStreams)
-        sampleSizeInBytes = dataBlockSizeInBytes / SAMPLES_PER_DATA_BLOCK
-        index = 0
-        for sample in range(numBlocks * SAMPLES_PER_DATA_BLOCK):
-            if dataBlock.checkUsbHeader(self.usbBuffer, index) is False:
-                if sample > 0:
-                    sample = sample - 1
-                    index = index - sampleSizeInBytes
-                lag = sampleSizeInBytes / 2
-                for i in range(sampleSizeInBytes / 2):
-                    if dataBlock.checkUsbHeader(self.usbBuffer, index + 2 * i):
-                        lag = i
-                        pass
-                self.readAdditionalDataWords(lag, index, numBytesToRead)
-            index = index + sampleSizeInBytes
-        for i in range(numBlocks):
-            dataBlock.fillFromUsbBuffer(self.usbBuffer, i, self.numDataStreams)
-            dataQueue.put(dataBlock)
-        del dataBlock
-        return True
-
     def readAdditionalDataWords(self, numWords, errorPoint, bufferLength):
         # MAY BE BROKEN. NOT TESTED
         numBytes = 2 * numWords
@@ -821,6 +822,27 @@ class Rhd2000EvalBoard:
             delays[i] = self.cableDelay[i]
         return delays
 
+    def cccc(self, commandList):
+        for i in range(len(commandList)):
+            cmd = int(commandList[i])
+            if cmd < 0 or cmd > 0xffff:
+                print("command[{}] = INVALID COMMAND : {}".format(i, cmd))
+            elif (cmd & 0xc000) == 0x0000:
+                channel = (cmd & 0x3f00) >> 8
+                print("command[{}] = CONVERT : {}".format(i, channel))
+            elif (cmd & 0xc000) == 0xc000:
+                reg = (cmd & 0x3f00) >> 8
+                print("command[{}] = READ : {}".format(i, reg))
+            elif (cmd & 0xc000) == 0x8000:
+                reg = (cmd & 0x3f00) >> 8
+                data = (cmd & 0x00ff)
+                print("command[{}] = WRITE : {}".format(i, reg))
+            elif cmd == 0x5500:
+                print("command[{}] = CALIBRATE".format(i))
+            elif cmd == 0x6a00:
+                print("command[{}] = CLEAR".format(i))
+            else:
+                print("Invalid Command")
 
 # RHD2000DATABLOCK
 
@@ -881,7 +903,7 @@ class Rhd2000DataBlock:
         return SAMPLES_PER_DATA_BLOCK * (4 + 2 + numDataStreams * 36 + 8 + 2)
 
     def checkUsbHeader(self, usbBuffer, index):
-        print('Running checkUsbHeader(rhd2000datablock)')
+        #print('Running checkUsbHeader(rhd2000datablock)')
         x1 = usbBuffer[index]
         x2 = usbBuffer[index + 1]
         x3 = usbBuffer[index + 2]
@@ -891,7 +913,7 @@ class Rhd2000DataBlock:
         x7 = usbBuffer[index + 6]
         x8 = usbBuffer[index + 7]
         header = (x8 << 56) + (x7 << 48) + (x6 << 40) + (x5 << 32) + (x4 << 24) + (x3 << 16) + (x2 << 8) + (x1 << 0)
-        print(header)
+        #print(header)
         return header == RHD2000_HEADER_MAGIC_NUMBER
 
     def convertUsbTimeStamp(self, usbBuffer, index):
@@ -902,8 +924,8 @@ class Rhd2000DataBlock:
         return (x4 << 24) + (x3 << 16) + (x2 << 8) + (x1 << 0)
 
     def convertUsbWord(self, usbBuffer, index):
-        x1 = usbBuffer[index]
-        x2 = usbBuffer[index + 1]
+        x1 = int(usbBuffer[index])
+        x2 = int(usbBuffer[index + 1])
         result = (x2 << 8) | (x1 << 0)
         return result
 
@@ -1026,13 +1048,20 @@ class Rhd2000DataBlock:
         rH2 = 8200.0 + rH2Dac2 * 38400.0 + rH2Dac1 * 730.0
         rL = 3300.0 + rLDac3 * 3000000.0 + rLDac2 * 15400.0 + rLDac1 * 190.0
         # 275 ~ 318 skip
+        print("RH1 DAC1, DAC2 : {}, {}, {}".format(rH1Dac1, rH1Dac2, rH1/1000))
+        print("RH2 DAC1, DAC2 : {}, {}, {}".format(rH2Dac1, rH2Dac2, rH2 / 1000))
+        print("RL DAC1, DAC2, DAC3 : {}, {}, {}".format(rLDac1, rLDac2, rLDac3))
         tempA = self.auxiliaryData[stream][1][12]
+        print(tempA)
         tempB = self.auxiliaryData[stream][1][20]
-        vddSample = self.auxiliaryData[stream][1][28]
+        vddSample = int(self.auxiliaryData[stream][1][28])
+        print(tempB)
+        print("VDDSAMPLE : {}".format(vddSample))
         tempUnitsC = (tempB - tempA) / 98.9 - 273.15
         tempUnitsF = (9.0 / 5.0) * tempUnitsC + 32.0
         vddSense = 0.0000748 * vddSample
         print("  Temperature sensor (only one reading): {}".format(round(tempUnitsC, 2)))
+        print("Supply voltage sensor : {}".format(vddSense))
 
 
 
@@ -1070,9 +1099,8 @@ def resizeArray(array, size):
     elif length == size:
         pass
     elif length < size:
-        zeroth = array[0]
         for i in range(size - length):
-            array.append(zeroth)
+            array.append(copy.deepcopy(array[0]))
 
 
 # ------------ RHD2000REGISTERS.CPP
@@ -1591,6 +1619,8 @@ class Rhd2000Registers:
         del commandList[:]
         self.tempEn = 1
         commandList.append(self.createRhd2000Command(Rhd2000CommandConvert, 32))
+        print('!!!!!')
+        print(self.createRhd2000Command(Rhd2000CommandConvert, 32))
         commandList.append(self.createRhd2000Command(Rhd2000CommandConvert, 33))
         commandList.append(self.createRhd2000Command(Rhd2000CommandConvert, 34))
         self.tempS1 = self.tempEn

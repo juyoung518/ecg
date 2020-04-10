@@ -98,8 +98,8 @@ AuxCmd3 = 'AuxCmd3'
 
 # BoardPort -> Changed to string
 PortA, PortB, PortC, PortD = ['PortA', 'PortB', 'PortC', 'PortD']
-PortA1, PortB1, PortC1, PortD1 = ['PortA1', 'PortB1', 'PortC1', 'PortD1']
-PortA2, PortB2, PortC2, PortD2 = ['PortA2', 'PortB2', 'PortC2', 'PortD2']
+PortA1, PortB1, PortC1, PortD1 = ['0', '2', '4', '6']
+PortA2, PortB2, PortC2, PortD2 = ['1', '3', '5', '7']
 
 
 # Global variables
@@ -149,6 +149,7 @@ class Rhd2000EvalBoard:
 
         self.intan.LoadDefaultPLLConfiguration()
         self.deviceInfo = ok.okTDeviceInfo()
+        print(self.deviceInfo)
         print('Opal Kelly Device Firmware Version : {}'.format(self.deviceInfo.deviceMajorVersion))
         print('Opal Kelly Device Serial No. : {}'.format(self.deviceInfo.serialNumber))
         print('Opal Kelly Device ID : {}'.format(self.deviceInfo.deviceID))
@@ -257,6 +258,7 @@ class Rhd2000EvalBoard:
     def initialize(self):
         self.resetBoard()
         self.setSampleRate(SampleRate30000Hz)
+        print('SET SAMPLE RATE')
         self.selectAuxCommandBank(PortA, AuxCmd1, 0)
         self.selectAuxCommandBank(PortB, AuxCmd1, 0)
         self.selectAuxCommandBank(PortC, AuxCmd1, 0)
@@ -272,12 +274,14 @@ class Rhd2000EvalBoard:
         self.selectAuxCommandLength(AuxCmd1, 0, 0)
         self.selectAuxCommandLength(AuxCmd2, 0, 0)
         self.selectAuxCommandLength(AuxCmd3, 0, 0)
+        print('SET AUX CMD LENGTH')
         self.setContinuousRunMode(True)
         self.setMaxTimeStep(4294967295)  # 4294967295 == (2^32 - 1)
         self.setCableLengthFeet(PortA, 3.0)
         self.setCableLengthFeet(PortB, 3.0)
         self.setCableLengthFeet(PortC, 3.0)
         self.setCableLengthFeet(PortD, 3.0)
+        print('SET CABLE LENGTH')
         self.setDspSettle(False)
         self.setDataSource(0, PortA1)
         self.setDataSource(1, PortB1)
@@ -287,10 +291,13 @@ class Rhd2000EvalBoard:
         self.setDataSource(5, PortB2)
         self.setDataSource(6, PortC2)
         self.setDataSource(7, PortD2)
+        print('SET DATA SOURCE')
         self.enableDataStream(0, True)
         for i in range(1, MAX_NUM_DATA_STREAMS):
             self.enableDataStream(i, False)
+        print('ENABLED DATA STREAM')
         self.clearTtlOut()
+        print('CLEARED TTL')
         self.enableDac(0, False)
         self.enableDac(1, False)
         self.enableDac(2, False)
@@ -299,6 +306,7 @@ class Rhd2000EvalBoard:
         self.enableDac(5, False)
         self.enableDac(6, False)
         self.enableDac(7, False)
+        print('ENABLED DAC')
         self.selectDacDataStream(0, 0)
         self.selectDacDataStream(1, 0)
         self.selectDacDataStream(2, 0)
@@ -315,6 +323,7 @@ class Rhd2000EvalBoard:
         self.selectDacDataChannel(5, 0)
         self.selectDacDataChannel(6, 0)
         self.selectDacDataChannel(7, 0)
+        print('SELECTED DAC CHANNEL')
         self.setDacManual(32768)
         self.setDacGain(0)
         self.setAudioNoiseSuppress(0)
@@ -327,6 +336,7 @@ class Rhd2000EvalBoard:
         self.setDacThreshold(5, 32768, True)
         self.setDacThreshold(6, 32768, True)
         self.setDacThreshold(7, 32768, True)
+        print('SET DAC THRESHOLD')
         self.enableExternalFastSettle(False)
         self.setExternalFastSettleChannel(0)
         self.enableExternalDigOut(PortA, False)
@@ -337,6 +347,7 @@ class Rhd2000EvalBoard:
         self.setExternalDigOutChannel(PortB, 0)
         self.setExternalDigOutChannel(PortC, 0)
         self.setExternalDigOutChannel(PortD, 0)
+        print('BOARD INITIALIZATION COMPLETE')
 
     def selectAuxCommandBank(self, port, auxCommandSlot, bank):
         if auxCommandSlot != 'AuxCmd1' and auxCommandSlot != 'AuxCmd2' and auxCommandSlot != 'AuxCmd3':
@@ -434,7 +445,7 @@ class Rhd2000EvalBoard:
         i, j = switchPort.get(port, "Error!")
         bitShift = i
         self.cableDelay[j] = delay
-        self.intan.SetWireInValue(WireInMisoDelay, delay << bitShift, 0x000f << bitShift)
+        self.intan.SetWireInValue(WireInMisoDelay, int(delay) << int(bitShift), 0x000f << int(bitShift))
         self.intan.UpdateWireIns()
 
     def setDspSettle(self, enabled):
@@ -453,7 +464,7 @@ class Rhd2000EvalBoard:
         else:
             endPoint = WireInDataStreamSel5678
             bitShift = int((stream - 4) * 4)
-        self.intan.SetWireInValue(endPoint, dataSource << bitShift, 0x000f << bitShift)
+        self.intan.SetWireInValue(endPoint, int(dataSource) << int(bitShift), 0x000f << int(bitShift))
         self.intan.UpdateWireIns()
 
     def enableDataStream(self, stream, enabled):
@@ -1147,7 +1158,7 @@ class Rhd2000Registers:
             Pi = 2 * math.acos(0.0)
             fCutoff[0] = 0.0
             logNewDspCutoffFreq = math.log10(newDspCutoffFreq)
-            for n in range(16):
+            for n in range(1, 16):
                 x = math.pow(2.0, float(n))
                 fCutoff[n] = self.sampleRate * math.log(x / (x - 1.0)) / (2 * Pi)
                 logFCutoff[n] = math.log10(fCutoff[n])

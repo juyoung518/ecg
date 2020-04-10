@@ -51,6 +51,47 @@ evalboard.selectAuxCommandBank(rhd2kbd.PortA, rhd2kbd.AuxCmd1, 0)
 print('SEL. AUX CMD BNK')
 
 
+commandSequenceLength = chipRegisters.createCommandListTempSensor(commandList)
+evalboard.uploadCommandList(commandList, rhd2kbd.AuxCmd2, 0)
+evalboard.selectAuxCommandLength(rhd2kbd.AuxCmd2, 0, commandSequenceLength - 1)
+evalboard.selectAuxCommandBank(rhd2kbd.PortA, rhd2kbd.AuxCmd2, 0)
+
+
+dspCutoffFreq = chipRegisters.setDspCutoffFreq(10.0)
+print('Actual DSP Cutoff Frequency : {}'.format(dspCutoffFreq))
+
+chipRegisters.setLowerBandwidth(1.0)
+chipRegisters.setUpperBandwidth(7500.0)
+
+commandSequenceLength = chipRegisters.createCommandListRegisterConfig(commandList, False)
+print('CMDSEQ')
+
+evalboard.uploadCommandList(commandList, rhd2kbd.AuxCmd3, 0)
+
+chipRegisters.createCommandListRegisterConfig(commandList, True)
+
+evalboard.uploadCommandList(commandList, rhd2kbd.AuxCmd3, 1)
+
+evalboard.selectAuxCommandLength(rhd2kbd.AuxCmd3, 0, commandSequenceLength - 1)
+
+evalboard.selectAuxCommandBank(rhd2kbd.PortA, rhd2kbd.AuxCmd3, 1)
+
+evalboard.setMaxTimeStep(60)
+evalboard.setContinuousRunMode(False)
+
+print("Number of 16-bit words in FIFO : {}".format(evalboard.numWordsInFifo()))
+
+evalboard.run()
+
+while evalboard.isRunning() is True:
+    pass
+
+print('Number of 16-bit words in FIFO : {}'.format(evalboard.numWordsInFifo()))
+
+dataBlock = rhd2kbd.Rhd2000DataBlock(evalboard.getNumEnabledDataStreams())
+evalboard.readDataBlock(dataBlock)
+
+dataBlock.rhdPrint(0)
 
 print('FIN')
 

@@ -616,10 +616,10 @@ class Rhd2000EvalBoard:
 
     def flush(self):
         while self.numWordsInFifo() >= USB_BUFFER_SIZE / 2:
-            self.intan.ReadFromPipeOut(PipeOutData, USB_BUFFER_SIZE, self.usbBuffer)
+            self.intan.ReadFromPipeOut(PipeOutData, self.usbBuffer)
             # ReadFromPipeOut overwrites usbBuffer with PipeOutData(new incoming data)
         while self.numWordsInFifo() > 0:
-            self.intan.ReadFromPipeOut(PipeOutData, 2 * self.numWordsInFifo(), self.usbBuffer)
+            self.intan.ReadFromPipeOut(PipeOutData, self.usbBuffer)
 
     def opalKellyModelName(self, model):
         if model == ok.OK_PRODUCT_XEM6010LX45:
@@ -743,11 +743,14 @@ class Rhd2000EvalBoard:
         if numBytesToRead > USB_BUFFER_SIZE:
             raise Exception("Error in Rhd2000EvalBoard::readDataBlock: USB buffer size exceeded.  ")
             return False
-        self.intan.ReadFromPipeOut(PipeOutData, numBytesToRead, self.usbBuffer)
+        buffer = bytearray("\x00" * numBytesToRead)
+        self.intan.ReadFromPipeOut(0xa0, buffer)
+        self.usbBuffer = buffer
         dataBlock.fillFromUsbBuffer(self.usbBuffer, 0, self.numDataStreams)
         return True
 
     def readDataBlocks(self, numBlocks, dataQueue, dataBlock):
+        # May be broken : NOT TESTED
         # dataQueue is a Queue object containing dataBlock
         # added dataBlock
         numWordsToRead = numBlocks * dataBlock.calculateDataBlockSizeInWords(self.numDataStreams)
@@ -757,7 +760,9 @@ class Rhd2000EvalBoard:
         if numBytesToRead > USB_BUFFER_SIZE:
             raise Exception("Error in Rhd2000EvalBoard::readDataBlocks: USB buffer size exceeded.  ")
             return False
-        self.intan.ReadFromPipeOut(PipeOutData, numBytesToRead, self.usbBuffer)
+        buffer = bytearray("\x00" * numBytesToRead)
+        self.intan.ReadFromPipeOut(PipeOutData, buffer)
+        self.usbBuffer = buffer
         dataBlock = Rhd2000DataBlock(self.numDataStreams)
         dataBlockSizeInBytes = 2 * dataBlock.calculateDataBlockSizeInWords(self.numDataStreams)
         sampleSizeInBytes = dataBlockSizeInBytes / SAMPLES_PER_DATA_BLOCK
@@ -781,13 +786,14 @@ class Rhd2000EvalBoard:
         return True
 
     def readAdditionalDataWords(self, numWords, errorPoint, bufferLength):
+        # MAY BE BROKEN. NOT TESTED
         numBytes = 2 * numWords
         for i in range(errorPoint, bufferLength - numBytes, 2):
             self.usbBuffer[i] = self.usbBuffer[i + numBytes]
             self.usbBuffer[i + 1] = self.usbBuffer[i + numBytes + 1]
         while self.numWordsInFifo() < numWords:
             pass
-        self.intan.ReadFromPipeOut(PipeOutData, numBytes, self.usbBuffer[bufferLength - numBytes])
+        self.intan.ReadFromPipeOut(PipeOutData, self.usbBuffer[bufferLength - numBytes])
 
     def getBoardMode(self):
         self.intan.UpdateWireOuts()
@@ -973,7 +979,7 @@ class Rhd2000DataBlock:
             print("unipolar")
         else:
             print("UNKNOWN")
-        print("    Die Revision: {}".format(self.auxiliaryData[stream[2][22]]))
+        #print("    Die Revision: {}".format(self.auxiliaryData[stream[2][22]]))
         print("    Future Expansion Register: {}".format(self.auxiliaryData[stream][2][23]))
         print("  RAM contents:")
         print("    ADC reference BW:      {}".format((self.auxiliaryData[stream][2][RamOffset + 0] & 0xc0) >> 6))

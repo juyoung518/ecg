@@ -209,3 +209,4 @@ class Rhd2000DataBlock:
         tempUnitsF = (9.0 / 5.0) * tempUnitsC + 32.0
         vddSense = 0.0000748 * vddSample
         print("  Temperature sensor (only one reading): {}".format(round(tempUnitsC, 2)))
+

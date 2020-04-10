@@ -121,7 +121,7 @@ class Rhd2000Registers:
             Pi = 2 * math.acos(0.0)
             fCutoff[0] = 0.0
             logNewDspCutoffFreq = math.log10(newDspCutoffFreq)
-            for n in range(16):
+            for n in range(1, 16):
                 x = math.pow(2.0, float(n))
                 fCutoff[n] = self.sampleRate * math.log(x / (x - 1.0)) / (2 * Pi)
                 logFCutoff[n] = math.log10(fCutoff[n])

@@ -3,9 +3,10 @@ import ok
 from sys import exit
 from math import floor
 import time
+import pandas
+import xlsxwriter
 
-saveOut = open('test.txt', 'w+b')
-
+# Stream > Channel > Time
 
 import rhd2000evalboard as rhd2kbd
 
@@ -84,6 +85,7 @@ dataBlock = rhd2kbd.Rhd2000DataBlock(evalboard.getNumEnabledDataStreams())
 evalboard.readDataBlock(dataBlock)
 
 dataBlock.rhdPrint(0)
+print('Enabled Streams : {}'.format(evalboard.numDataStreams))
 
 evalboard.selectAuxCommandBank(rhd2kbd.PortA, rhd2kbd.AuxCmd3, 0)
 

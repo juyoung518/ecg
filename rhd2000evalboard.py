@@ -329,8 +329,12 @@ class Rhd2000EvalBoard:
         self.setDataSource(7, PortD2)
         print('SET DATA SOURCE')
         self.enableDataStream(0, True)
+        # CHANGE THIS IN ORDER TO ENABLE ALL DATA STREAMS
+        # 1 Port houses two streams : PortA1, PortA2, PortB1, PortB2 .......
+        # 32 inputs per stream & 2 streams per port & 4 ports
+        # False to enable only stream 0(Port A1), True to enable all streams
         for i in range(1, MAX_NUM_DATA_STREAMS):
-            self.enableDataStream(i, False)
+            self.enableDataStream(i, True)
         print('ENABLED DATA STREAM')
         self.clearTtlOut()
         print('CLEARED TTL')

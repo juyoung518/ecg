@@ -1,3 +1,4 @@
+
 # RHD2000REGISTERS
 import math
 
@@ -27,9 +28,8 @@ def resizeArray(array, size):
     elif length == size:
         pass
     elif length < size:
-        zeroth = array[0]
         for i in range(size - length):
-            array.append(zeroth)
+            array.append(copy.deepcopy(array[0]))
 
 
 # ------------ RHD2000REGISTERS.CPP
@@ -548,6 +548,8 @@ class Rhd2000Registers:
         del commandList[:]
         self.tempEn = 1
         commandList.append(self.createRhd2000Command(Rhd2000CommandConvert, 32))
+        print('!!!!!')
+        print(self.createRhd2000Command(Rhd2000CommandConvert, 32))
         commandList.append(self.createRhd2000Command(Rhd2000CommandConvert, 33))
         commandList.append(self.createRhd2000Command(Rhd2000CommandConvert, 34))
         self.tempS1 = self.tempEn

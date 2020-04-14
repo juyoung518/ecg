@@ -57,7 +57,7 @@ class Rhd2000DataBlock:
         return SAMPLES_PER_DATA_BLOCK * (4 + 2 + numDataStreams * 36 + 8 + 2)
 
     def checkUsbHeader(self, usbBuffer, index):
-        print('Running checkUsbHeader(rhd2000datablock)')
+        #print('Running checkUsbHeader(rhd2000datablock)')
         x1 = usbBuffer[index]
         x2 = usbBuffer[index + 1]
         x3 = usbBuffer[index + 2]
@@ -67,7 +67,7 @@ class Rhd2000DataBlock:
         x7 = usbBuffer[index + 6]
         x8 = usbBuffer[index + 7]
         header = (x8 << 56) + (x7 << 48) + (x6 << 40) + (x5 << 32) + (x4 << 24) + (x3 << 16) + (x2 << 8) + (x1 << 0)
-        print(header)
+        #print(header)
         return header == RHD2000_HEADER_MAGIC_NUMBER
 
     def convertUsbTimeStamp(self, usbBuffer, index):
@@ -78,8 +78,8 @@ class Rhd2000DataBlock:
         return (x4 << 24) + (x3 << 16) + (x2 << 8) + (x1 << 0)
 
     def convertUsbWord(self, usbBuffer, index):
-        x1 = usbBuffer[index]
-        x2 = usbBuffer[index + 1]
+        x1 = int(usbBuffer[index])
+        x2 = int(usbBuffer[index + 1])
         result = (x2 << 8) | (x1 << 0)
         return result
 
@@ -155,7 +155,7 @@ class Rhd2000DataBlock:
             print("unipolar")
         else:
             print("UNKNOWN")
-        print("    Die Revision: {}".format(self.auxiliaryData[stream[2][22]]))
+        #print("    Die Revision: {}".format(self.auxiliaryData[stream[2][22]]))
         print("    Future Expansion Register: {}".format(self.auxiliaryData[stream][2][23]))
         print("  RAM contents:")
         print("    ADC reference BW:      {}".format((self.auxiliaryData[stream][2][RamOffset + 0] & 0xc0) >> 6))
@@ -202,13 +202,21 @@ class Rhd2000DataBlock:
         rH2 = 8200.0 + rH2Dac2 * 38400.0 + rH2Dac1 * 730.0
         rL = 3300.0 + rLDac3 * 3000000.0 + rLDac2 * 15400.0 + rLDac1 * 190.0
         # 275 ~ 318 skip
+        print("RH1 DAC1, DAC2 : {}, {}, {}".format(rH1Dac1, rH1Dac2, rH1/1000))
+        print("RH2 DAC1, DAC2 : {}, {}, {}".format(rH2Dac1, rH2Dac2, rH2 / 1000))
+        print("RL DAC1, DAC2, DAC3 : {}, {}, {}".format(rLDac1, rLDac2, rLDac3))
         tempA = self.auxiliaryData[stream][1][12]
         print(tempA)
         tempB = self.auxiliaryData[stream][1][20]
+        vddSample = int(self.auxiliaryData[stream][1][28])
         print(tempB)
-        vddSample = self.auxiliaryData[stream][1][28]
+        print("VDDSAMPLE : {}".format(vddSample))
         tempUnitsC = (tempB - tempA) / 98.9 - 273.15
         tempUnitsF = (9.0 / 5.0) * tempUnitsC + 32.0
         vddSense = 0.0000748 * vddSample
         print("  Temperature sensor (only one reading): {}".format(round(tempUnitsC, 2)))
+        print("Supply voltage sensor : {}".format(vddSense))
+
+
+
 

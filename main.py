@@ -4,15 +4,7 @@ from sys import exit
 from math import floor
 import time
 
-#class binaryStream:
- #   def __init__(self):
- #       self.saveOut = None
- #   def open(self, filename):
- #       self.saveOut = open(filename, 'rb+')
-
-# To be moved
-#ofstream = binaryStream()
-#ofstream.saveOut('test_sample.txt')
+saveOut = open('test.txt', 'w+b')
 
 
 import rhd2000evalboard as rhd2kbd
@@ -88,11 +80,12 @@ while evalboard.isRunning() is True:
 
 print('Number of 16-bit words in FIFO : {}'.format(evalboard.numWordsInFifo()))
 
-dataBlock5 = rhd2kbd.Rhd2000DataBlock(evalboard.getNumEnabledDataStreams())
-evalboard.readDataBlock(dataBlock5)
+dataBlock = rhd2kbd.Rhd2000DataBlock(evalboard.getNumEnabledDataStreams())
+evalboard.readDataBlock(dataBlock)
 
-dataBlock5.rhdPrint(0)
+dataBlock.rhdPrint(0)
 
+evalboard.selectAuxCommandBank(rhd2kbd.PortA, rhd2kbd.AuxCmd3, 0)
 
 print("Number of 16-bit words in FIFO : {}".format(evalboard.numWordsInFifo()))
 

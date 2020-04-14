@@ -744,13 +744,12 @@ class Rhd2000EvalBoard:
                 print("command[{}] = INVALID COMMAND".format(i))
         print("")
 
-    def queueToFile(self, dataQueue, dataBlock, saveOut):
+    def queueToFile(self, dataQueue, saveOut):
         # dataQueue is queue class, saveOut is binary file open
         count = 0
-        while dataQueue.empty() is True:
-            data = dataBlock.write(saveOut, self.getNumEnabledDataStreams)
-            dataQueue.put(data)
-            dataQueue.get()
+        while dataQueue.empty() is False:
+            sval = dataQueue.get()
+            saveOut.write(sval)
             count += 1
         return count
 
@@ -784,6 +783,35 @@ class Rhd2000EvalBoard:
         self.intan.ReadFromPipeOut(0xa0, buffer)
         self.usbBuffer = buffer
         dataBlock.fillFromUsbBuffer(self.usbBuffer, 0, self.numDataStreams)
+        return True
+
+    def readDataBlocks(self, numBlocks, dataQueue, dataBlock):
+        numWordstoRead = numBlocks * dataBlock.calculateDataBlockSizeInWords(self.numDataStreams)
+        if self.numWordsInFifo() < numWordstoRead:
+            return False
+        numBytesToRead = 2 * numWordstoRead
+        if numBytesToRead > USB_BUFFER_SIZE:
+            raise Exception("Error in Rhd2000EvalBoard::readDataBlocks: USB buffer size exceeded.")
+        self.intan.ReadFromPipeOut(PipeOutData, self.usbBuffer)
+        dataBlock = Rhd2000DataBlock(self.numDataStreams)
+        dataBlockSizeInBytes = 2 * dataBlock.calculateDataBlockSizeInWords(self.numDataStreams)
+        sampleSizeInBytes = dataBlockSizeInBytes / SAMPLES_PER_DATA_BLOCK
+        index = 0
+        for sample in range(SAMPLES_PER_DATA_BLOCK):
+            if dataBlock.checkUsbHeader(self.usbBuffer, index) is False:
+                if sample > 0:
+                    sample = sample - 2
+                    index = index - sampleSizeInBytes
+                lag = int(sampleSizeInBytes / 2)
+                for i in range(sampleSizeInBytes / 2):
+                    if dataBlock.checkUsbHeader(self.usbBuffer, index + 2*i) is True:
+                        lag = i
+                self.readAdditionalDataWords(lag, index, numBytesToRead)
+            index = index + sampleSizeInBytes
+        for i in range(numBlocks):
+            dataBlock.fillFromUsbBuffer(self.usbBuffer, i, self.numDataStreams)
+            dataQueue.put(dataBlock)
+        del dataBlock
         return True
 
     def readAdditionalDataWords(self, numWords, errorPoint, bufferLength):
@@ -931,16 +959,20 @@ class Rhd2000DataBlock:
 
     def fillFromUsbBuffer(self, usbBuffer, blockIndex, numDataStreams):
         index = blockIndex * 2 * self.calculateDataBlockSizeInWords(numDataStreams)
+        print('HEADER : {}'.format(index))
         for t in range(SAMPLES_PER_DATA_BLOCK):
             if self.checkUsbHeader(usbBuffer, index) is False:
                 raise Exception("Error in Rhd2000EvalBoard::readDataBlock: Incorrect header.")
             index = index + 8
+            print('TIMESTAMP : {}'.format(index))
             self.timeStamp[t] = self.convertUsbTimeStamp(usbBuffer, index)
             index = index + 4
+            print('Auxiliary Data : {}'.format(index))
             for channel in range(3):
                 for stream in range(numDataStreams):
                     self.auxiliaryData[stream][channel][t] = self.convertUsbWord(usbBuffer, index)
                     index = index + 2
+            print('Amp Data : {}'.format(index))
             for channel in range(32):
                 for stream in range(numDataStreams):
                     self.amplifierData[stream][channel][t] = self.convertUsbWord(usbBuffer, index)
@@ -1062,6 +1094,7 @@ class Rhd2000DataBlock:
         vddSense = 0.0000748 * vddSample
         print("  Temperature sensor (only one reading): {}".format(round(tempUnitsC, 2)))
         print("Supply voltage sensor : {}".format(vddSense))
+
 
 
 

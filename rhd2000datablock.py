@@ -85,16 +85,20 @@ class Rhd2000DataBlock:
 
     def fillFromUsbBuffer(self, usbBuffer, blockIndex, numDataStreams):
         index = blockIndex * 2 * self.calculateDataBlockSizeInWords(numDataStreams)
+        print('HEADER : {}'.format(index))
         for t in range(SAMPLES_PER_DATA_BLOCK):
             if self.checkUsbHeader(usbBuffer, index) is False:
                 raise Exception("Error in Rhd2000EvalBoard::readDataBlock: Incorrect header.")
             index = index + 8
+            print('TIMESTAMP : {}'.format(index))
             self.timeStamp[t] = self.convertUsbTimeStamp(usbBuffer, index)
             index = index + 4
+            print('Auxiliary Data : {}'.format(index))
             for channel in range(3):
                 for stream in range(numDataStreams):
                     self.auxiliaryData[stream][channel][t] = self.convertUsbWord(usbBuffer, index)
                     index = index + 2
+            print('Amp Data : {}'.format(index))
             for channel in range(32):
                 for stream in range(numDataStreams):
                     self.amplifierData[stream][channel][t] = self.convertUsbWord(usbBuffer, index)
@@ -216,6 +220,7 @@ class Rhd2000DataBlock:
         vddSense = 0.0000748 * vddSample
         print("  Temperature sensor (only one reading): {}".format(round(tempUnitsC, 2)))
         print("Supply voltage sensor : {}".format(vddSense))
+        #print("Test Value : {}".format(self.auxiliaryData[stream][]))
 
 
 

@@ -125,27 +125,13 @@ while evalboard.isRunning():
         pass
 
 
-
-while evalboard.isRunning() is True:
-    pass
-
-print('Number of 16-bit words in FIFO : {}'.format(evalboard.numWordsInFifo()))
-
-dataBlock = rhd2kbd.Rhd2000DataBlock(evalboard.getNumEnabledDataStreams())
-evalboard.readDataBlock(dataBlock)
-
-dataBlock.rhdPrint(0)
-print('Enabled Streams : {}'.format(evalboard.numDataStreams))
-
-evalboard.selectAuxCommandBank(rhd2kbd.PortA, rhd2kbd.AuxCmd3, 0)
-
-print("Number of 16-bit words in FIFO : {}".format(evalboard.numWordsInFifo()))
+print("Number of 16-bit words in FIFO before Reset : {}".format(evalboard.numWordsInFifo()))
 
 evalboard.flush()
 evalboard.resetBoard()
 
 
-print("Number of 16-bit words in FIFO : {}".format(evalboard.numWordsInFifo()))
+print("Number of 16-bit words in FIFO after Reset : {}".format(evalboard.numWordsInFifo()))
 
 print('FIN')
 

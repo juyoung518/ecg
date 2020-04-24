@@ -103,6 +103,8 @@ while terminate is False:
     evalboard.setMaxTimeStep(60)
     evalboard.setContinuousRunMode(False)
     evalboard.run()
+    while evalboard.isRunning() is True:
+        pass
     evalboard.readDataBlock(dataBlock)
     testBufferQueue.append(dataBlock)
     del dataBlock

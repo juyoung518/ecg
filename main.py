@@ -61,15 +61,15 @@ evalboard.selectAuxCommandBank(rhd2kbd.PortA, rhd2kbd.AuxCmd3, 1)
 evalboard.setMaxTimeStep(60)
 evalboard.setContinuousRunMode(False)
 
-#print("NumWords in FIFO before Test Run : {}".format(evalboard.numWordsInFifo()))
-#print("FIFO buffer capacity : {}".format(evalboard.fifoCapacityInWords()))
+print("NumWords in FIFO before Test Run : {}".format(evalboard.numWordsInFifo()))
+print("FIFO buffer capacity : {}".format(evalboard.fifoCapacityInWords()))
 
-#evalboard.run()
+evalboard.run()
 
 dataBlock = rhd2kbd.Rhd2000DataBlock(evalboard.getNumEnabledDataStreams())
 
-#evalboard.readDataBlock(dataBlock)
-#dataBlock.rhdPrint(0)
+evalboard.readDataBlock(dataBlock)
+dataBlock.rhdPrint(0)
 print("NumWords in FIFO after Test Run : {}".format(evalboard.numWordsInFifo()))
 
 # Real Run -----------------------------

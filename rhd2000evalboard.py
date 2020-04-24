@@ -108,8 +108,8 @@ PortA2, PortB2, PortC2, PortD2 = ['1', '3', '5', '7']
 def fillFromUsbBuffer(dataBlock, usbBuffer, blockIndex, numDataStreams):
     index = blockIndex * 2 * dataBlock.calculateDataBlockSizeInWords(numDataStreams)
     for t in range(SAMPLES_PER_DATA_BLOCK):
-        #if dataBlock.checkUsbHeader(usbBuffer, index) is False:
-            #raise Exception("Error in Rhd2000EvalBoard::readDataBlock: Incorrect header.")
+        if dataBlock.checkUsbHeader(usbBuffer, index) is False:
+            raise Exception("Error in Rhd2000EvalBoard::readDataBlock: Incorrect header.")
         index = index + 8
         dataBlock.timeStamp[t] = dataBlock.convertUsbTimeStamp(usbBuffer, index)
         index = index + 4
@@ -967,7 +967,7 @@ class Rhd2000DataBlock:
         return result
 
     def fillFromUsbBuffer(self, usbBuffer, blockIndex, numDataStreams):
-        index = blockIndex * 2 * self.calculateDataBlockSizeInWords(numDataStreams)
+        index = blockIndex * self.calculateDataBlockSizeInWords(numDataStreams)
         #print('HEADER : {}'.format(index))
         for t in range(SAMPLES_PER_DATA_BLOCK):
             if self.checkUsbHeader(usbBuffer, index) is False:

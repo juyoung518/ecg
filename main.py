@@ -126,6 +126,7 @@ while evalboard.isRunning():
 
         for i in range(dataQueue.qsize()):
             testBufferQueue.append(dataQueue.get())
+            print('TestBufferQueue Length : {}'.format(len(testBufferQueue)))
         # Stop when there are more than 60,000 samples in testBufferQueue
         if len(testBufferQueue) >= 1000:
             print("Stopping Data Acquisition : Total of {} dataBlocks processed with {} seconds elapsed.".format(len(testBufferQueue), time))

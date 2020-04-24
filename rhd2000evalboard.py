@@ -801,7 +801,7 @@ class Rhd2000EvalBoard:
         dataBlockSizeInBytes = 2 * dataBlock.calculateDataBlockSizeInWords(self.numDataStreams)
         sampleSizeInBytes = dataBlockSizeInBytes / SAMPLES_PER_DATA_BLOCK
         index = 0
-        for sample in range(numBlocks * SAMPLES_PER_DATA_BLOCK):
+        for sample in range(int(numBlocks * SAMPLES_PER_DATA_BLOCK)):
             if dataBlock.checkUsbHeader(self.usbBuffer, index) is False:
                 if sample > 0:
                     sample = sample - 1
@@ -812,7 +812,7 @@ class Rhd2000EvalBoard:
                         lag = i
                 self.readAdditionalDataWords(lag, index, numBytesToRead)
             index = index + sampleSizeInBytes
-        for i in range(numBlocks):
+        for i in range(int(numBlocks)):
             dataBlock.fillFromUsbBuffer(self.usbBuffer, i, self.numDataStreams)
             dataQueue.put(dataBlock)
         del dataBlock

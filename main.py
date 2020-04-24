@@ -101,7 +101,10 @@ evalboard.run()
 
 # Wait for dataQueue to Fill
 while evalboard.isRunning():
-    dataQueueIsFull = evalboard.readDataBlocks(usbBlocksToRead, dataQueue, dataBlock)
+    while dataQueue.qsize() < int(usbBlocksToRead):
+        dataBlockCreated = evalboard.readDataBlock(dataBlock)
+    datqQueueIsFull = True
+    #dataQueueIsFull = evalboard.readDataBlocks(usbBlocksToRead, dataQueue, dataBlock)
     if dataQueueIsFull is True:
         time = time + timePerReadingSessionIncr
         fifoPercent = floor(evalboard.numWordsInFifo() / evalboard.fifoCapacityInWords() * 100)

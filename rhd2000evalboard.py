@@ -780,7 +780,7 @@ class Rhd2000EvalBoard:
     def readDataBlock(self, dataBlock):
         # dataBlock : rhd2000datablock class obj
         numBytesToRead = 2 * dataBlock.calculateDataBlockSizeInWords(self.numDataStreams)
-        if self.numWordsInFIFO() < dataBlock.calculateDataBlockSizeInWords(self.numDataStreams):
+        if self.numWordsInFifo() < dataBlock.calculateDataBlockSizeInWords(self.numDataStreams):
             return False
         if numBytesToRead > USB_BUFFER_SIZE:
             raise Exception("Error in Rhd2000EvalBoard::readDataBlock: USB buffer size exceeded.  ")

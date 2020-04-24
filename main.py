@@ -3,7 +3,7 @@ import ok
 from sys import exit
 from math import floor
 import time
-from math import ceil, floor, gcd
+from math import ceil, floor
 
 # Stream > Channel > Time
 

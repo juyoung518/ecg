@@ -97,7 +97,7 @@ testBufferQueue = []
 
 # Start Session
 evalboard.setMaxTimeStep(700000)
-evalboard.setContinuousRunMode(True)
+evalboard.setContinuousRunMode(False)
 evalboard.run()
 
 # Wait for dataQueue to Fill
@@ -110,12 +110,13 @@ while evalboard.isRunning():
         else:
             pass
         del dataBlock
-    datqQueueIsFull = True
+    dataQueueIsFull = True
     #dataQueueIsFull = evalboard.readDataBlocks(usbBlocksToRead, dataQueue, dataBlock)
     if dataQueueIsFull is True:
         time = time + timePerReadingSessionIncr
         fifoPercent = floor(evalboard.numWordsInFifo() / evalboard.fifoCapacityInWords() * 100)
         print('FIFO percentage : {}%'.format(fifoPercent))
+        print('USB BackupBuffer Percentage : {}%'.format(floor(len(evalboard.usbBackupBuffer)/2400000)))
         if fifoPercent > 95:
             print('FIFO over 95% FULL!!\nStopping data acquisition')
             evalboard.setContinuousRunMode(False)
@@ -144,4 +145,3 @@ evalboard.resetBoard()
 print("Number of 16-bit words in FIFO after Reset : {}".format(evalboard.numWordsInFifo()))
 
 print('FIN')
-

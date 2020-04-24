@@ -149,7 +149,8 @@ class Rhd2000EvalBoard:
         self.dataStreamEnabled = [0] * MAX_NUM_DATA_STREAMS
         for i in range(MAX_NUM_DATA_STREAMS):
             self.dataStreamEnabled[i] = 0
-        self.usbBuffer = [0 for i in range(USB_BUFFER_SIZE)]
+        self.usbBuffer = bytearray("")
+        self.usbBackupBuffer = bytearray("")
         self.cableDelay = [-1] * 4
 
     def open(self):
@@ -780,14 +781,16 @@ class Rhd2000EvalBoard:
     def readDataBlock(self, dataBlock):
         # dataBlock : rhd2000datablock class obj
         numBytesToRead = 2 * dataBlock.calculateDataBlockSizeInWords(self.numDataStreams)
-        if self.numWordsInFifo() < dataBlock.calculateDataBlockSizeInWords(self.numDataStreams)*2:
+        if self.numWordsInFifo() < dataBlock.calculateDataBlockSizeInWords(self.numDataStreams):
             return False
         if numBytesToRead > USB_BUFFER_SIZE:
             raise Exception("Error in Rhd2000EvalBoard::readDataBlock: USB buffer size exceeded.  ")
             return False
-        buffer = bytearray("\x00" * numBytesToRead)
+        buffer = bytearray("\x00" * numBytesToRead * 60)
         self.intan.ReadFromPipeOut(0xa0, buffer)
-        self.usbBuffer = buffer
+        self.usbBackupBuffer = self.usbBackupBuffer + buffer
+        self.usbBuffer = self.usbBackupBuffer[:dataBlock.calculateDataBlockSizeInWords(self.numDataStreams)]
+        self.usbBackupBuffer = self.usbBackupBuffer[dataBlock.calculateDataBlockSizeInWords(self.numDataStreams):]
         dataBlock.fillFromUsbBuffer(self.usbBuffer, 0, self.numDataStreams)
         return True
 

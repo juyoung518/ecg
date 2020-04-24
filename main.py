@@ -103,6 +103,8 @@ evalboard.run()
 while evalboard.isRunning():
     while dataQueue.qsize() < int(usbBlocksToRead):
         dataBlockCreated = evalboard.readDataBlock(dataBlock)
+        dataQueue.put(dataBlock)
+        del dataBlock
     datqQueueIsFull = True
     #dataQueueIsFull = evalboard.readDataBlocks(usbBlocksToRead, dataQueue, dataBlock)
     if dataQueueIsFull is True:

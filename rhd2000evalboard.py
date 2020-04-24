@@ -108,8 +108,8 @@ PortA2, PortB2, PortC2, PortD2 = ['1', '3', '5', '7']
 def fillFromUsbBuffer(dataBlock, usbBuffer, blockIndex, numDataStreams):
     index = blockIndex * 2 * dataBlock.calculateDataBlockSizeInWords(numDataStreams)
     for t in range(SAMPLES_PER_DATA_BLOCK):
-        if dataBlock.checkUsbHeader(usbBuffer, index) is False:
-            raise Exception("Error in Rhd2000EvalBoard::readDataBlock: Incorrect header.")
+        #if dataBlock.checkUsbHeader(usbBuffer, index) is False:
+            #raise Exception("Error in Rhd2000EvalBoard::readDataBlock: Incorrect header.")
         index = index + 8
         dataBlock.timeStamp[t] = dataBlock.convertUsbTimeStamp(usbBuffer, index)
         index = index + 4
@@ -149,8 +149,7 @@ class Rhd2000EvalBoard:
         self.dataStreamEnabled = [0] * MAX_NUM_DATA_STREAMS
         for i in range(MAX_NUM_DATA_STREAMS):
             self.dataStreamEnabled[i] = 0
-        self.usbBuffer = bytearray("")
-        self.usbBackupBuffer = bytearray("")
+        self.usbBuffer = [0 for i in range(USB_BUFFER_SIZE)]
         self.cableDelay = [-1] * 4
 
     def open(self):
@@ -781,16 +780,12 @@ class Rhd2000EvalBoard:
     def readDataBlock(self, dataBlock):
         # dataBlock : rhd2000datablock class obj
         numBytesToRead = 2 * dataBlock.calculateDataBlockSizeInWords(self.numDataStreams)
-        if self.numWordsInFifo() < dataBlock.calculateDataBlockSizeInWords(self.numDataStreams):
-            return False
         if numBytesToRead > USB_BUFFER_SIZE:
             raise Exception("Error in Rhd2000EvalBoard::readDataBlock: USB buffer size exceeded.  ")
             return False
-        buffer = bytearray("\x00" * numBytesToRead * 60)
+        buffer = bytearray("\x00" * numBytesToRead)
         self.intan.ReadFromPipeOut(0xa0, buffer)
-        self.usbBackupBuffer = self.usbBackupBuffer + buffer
-        self.usbBuffer = self.usbBackupBuffer[:dataBlock.calculateDataBlockSizeInWords(self.numDataStreams)]
-        self.usbBackupBuffer = self.usbBackupBuffer[dataBlock.calculateDataBlockSizeInWords(self.numDataStreams):]
+        self.usbBuffer = buffer
         dataBlock.fillFromUsbBuffer(self.usbBuffer, 0, self.numDataStreams)
         return True
 
@@ -967,7 +962,7 @@ class Rhd2000DataBlock:
         return result
 
     def fillFromUsbBuffer(self, usbBuffer, blockIndex, numDataStreams):
-        index = blockIndex * self.calculateDataBlockSizeInWords(numDataStreams)
+        index = blockIndex * 2 * self.calculateDataBlockSizeInWords(numDataStreams)
         #print('HEADER : {}'.format(index))
         for t in range(SAMPLES_PER_DATA_BLOCK):
             if self.checkUsbHeader(usbBuffer, index) is False:

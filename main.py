@@ -93,49 +93,19 @@ print("NumWords in FIFO before session : {}".format(evalboard.numWordsInFifo()))
 dataQueue = Queue.Queue()
 del dataBlock
 dataBlock = rhd2kbd.Rhd2000DataBlock(evalboard.getNumEnabledDataStreams())
+dataBlockLength = dataBlock.calculateDataBlockSizeInWords(evalboard.getNumEnabledDataStreams())
 testBufferQueue = []
 
-# Start Session
-evalboard.setMaxTimeStep(700000)
-evalboard.setContinuousRunMode(False)
-evalboard.run()
+terminate = False
 
-# Wait for dataQueue to Fill
-while evalboard.isRunning():
-    while dataQueue.qsize() < int(usbBlocksToRead):
-        dataBlock = rhd2kbd.Rhd2000DataBlock(evalboard.getNumEnabledDataStreams())
-        dataBlockCreated = evalboard.readDataBlock(dataBlock)
-        if dataBlockCreated is True:
-            dataQueue.put(dataBlock)
-        else:
-            pass
-        del dataBlock
-    dataQueueIsFull = True
-    #dataQueueIsFull = evalboard.readDataBlocks(usbBlocksToRead, dataQueue, dataBlock)
-    if dataQueueIsFull is True:
-        time = time + timePerReadingSessionIncr
-        fifoPercent = floor(evalboard.numWordsInFifo() / evalboard.fifoCapacityInWords() * 100)
-        print('FIFO percentage : {}%'.format(fifoPercent))
-        print('USB BackupBuffer Percentage : {}%'.format(floor(len(evalboard.usbBackupBuffer)/2400000)))
-        if fifoPercent > 95:
-            print('FIFO over 95% FULL!!\nStopping data acquisition')
-            evalboard.setContinuousRunMode(False)
-            evalboard.setMaxTimeStep(0)
-        elif fifoPercent > 70:
-            print('FIFO limit Warning')
-
-        for i in range(dataQueue.qsize()):
-            testBufferQueue.append(dataQueue.get())
-            print('TestBufferQueue Length : {}'.format(len(testBufferQueue)))
-        # Stop when there are more than 60,000 samples in testBufferQueue
-        if len(testBufferQueue) >= 1000:
-            print("Stopping Data Acquisition : Total of {} dataBlocks processed with {} seconds elapsed.".format(len(testBufferQueue), time))
-            evalboard.setContinuousRunMode(False)
-            evalboard.setMaxTimeStep(0)
-            print("이론적으로 Elapsed Time이 3초 정도여야 합니다. 확인 부탁드려요!")
-    else:
-        pass
-
+while terminate is False:
+    dataBlock = rhd2kbd.Rhd2000DataBlock(evalboard.getNumEnabledDataStreams())
+    evalboard.setMaxTimeStep(60)
+    evalboard.setContinuousRunMode(False)
+    evalboard.run()
+    evalboard.readDataBlock(dataBlock)
+    testBufferQueue.append(dataBlock)
+    del dataBlock
 
 print("Number of 16-bit words in FIFO before Reset : {}".format(evalboard.numWordsInFifo()))
 
@@ -146,3 +116,4 @@ evalboard.resetBoard()
 print("Number of 16-bit words in FIFO after Reset : {}".format(evalboard.numWordsInFifo()))
 
 print('FIN')
+

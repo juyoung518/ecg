@@ -96,6 +96,7 @@ dataBlock = rhd2kbd.Rhd2000DataBlock(evalboard.getNumEnabledDataStreams())
 testBufferQueue = []
 
 # Start Session
+evalboard.setMaxTimeStep(700000)
 evalboard.setContinuousRunMode(True)
 evalboard.run()
 

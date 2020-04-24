@@ -102,8 +102,12 @@ evalboard.run()
 # Wait for dataQueue to Fill
 while evalboard.isRunning():
     while dataQueue.qsize() < int(usbBlocksToRead):
+        dataBlock = rhd2kbd.Rhd2000DataBlock(evalboard.getNumEnabledDataStreams())
         dataBlockCreated = evalboard.readDataBlock(dataBlock)
-        dataQueue.put(dataBlock)
+        if dataBlockCreated is True:
+            dataQueue.put(dataBlock)
+        else:
+            pass
         del dataBlock
     datqQueueIsFull = True
     #dataQueueIsFull = evalboard.readDataBlocks(usbBlocksToRead, dataQueue, dataBlock)
@@ -119,7 +123,7 @@ while evalboard.isRunning():
             print('FIFO limit Warning')
 
         for i in range(dataQueue.qsize()):
-            testBufferQueue.append(dataQueue.pop())
+            testBufferQueue.append(dataQueue.get())
         # Stop when there are more than 60,000 samples in testBufferQueue
         if len(testBufferQueue) >= 1000:
             print("Stopping Data Acquisition : Total of {} dataBlocks processed with {} seconds elapsed.".format(len(testBufferQueue), time))

@@ -16,8 +16,6 @@ def getBoardSampleRate():
     return run_settings['SampleRate']
 def getObjectiveRefreshRate():
     return run_settings['RefreshRate']
-def getLCM(num1, num2):
-    return abs(num1 * num2) / gcd(num1, num2)
 
 evalboard = rhd2kbd.Rhd2000EvalBoard()
 evalboard.open()
@@ -94,9 +92,10 @@ dataQueue = Queue.Queue()
 del dataBlock
 dataBlock = rhd2kbd.Rhd2000DataBlock(evalboard.getNumEnabledDataStreams())
 dataBlockLength = dataBlock.calculateDataBlockSizeInWords(evalboard.getNumEnabledDataStreams())
-testBufferQueue = []
+#testBufferQueue = []
 
 terminate = False
+
 
 while terminate is False:
     dataBlock = rhd2kbd.Rhd2000DataBlock(evalboard.getNumEnabledDataStreams())
@@ -106,8 +105,11 @@ while terminate is False:
     while evalboard.isRunning() is True:
         pass
     evalboard.readDataBlock(dataBlock)
-    testBufferQueue.append(dataBlock)
+    #testBufferQueue.append(dataBlock)
+    for i in range(len(dataBlock.amplifierData[0][0])):
+        print(dataBlock.amplifierData[0][0][i])
     del dataBlock
+    #print('Datablock Created')
 
 print("Number of 16-bit words in FIFO before Reset : {}".format(evalboard.numWordsInFifo()))
 
